@@ -1,0 +1,429 @@
+####################################
+####	ULOOP			####
+####################################
+variable jbn uloop 1  # run n simulations
+variable startfrom equal 0
+variable jn equal ${jbn}+${startfrom}
+print ${jn}
+variable seed equal (${jn}+4)*51-2*${jbn}
+############################
+####	DEFINITIONS 	####
+############################
+#READ FILE
+variable rname index StartFiles/LammpsInput.46Chr
+#
+############################
+#FOLDER
+############################
+variable folder index WarmUP
+shell mkdir ${folder}
+############################
+# MISC
+############################
+units lj
+atom_style angle 
+boundary        p p p
+neighbor 1.3 bin
+neigh_modify every 1 delay 1 check yes 
+############################
+restart 1000000 ${folder}/Restart.WarmUP.L80.46ChrRW${jn}.*
+read_data ${rname}
+################################
+####	BOX	             #######
+################################
+change_box all x final -100 100 y final -100 100 z final -100 100 boundary f f f units box
+fix WALL all wall/lj126 xhi EDGE 1.0 1.0 1.122462048 xlo EDGE 1.0 1.0 1.122462048 yhi EDGE 1.0 1.0 1.122462048 ylo EDGE 1.0 1.0 1.122462048 zhi EDGE 1.0 1.0 1.122462048 zlo EDGE 1.0 1.0 1.122462048 units box
+
+####################################
+####	ANGLE	             #######
+####################################
+angle_style   cosine
+angle_coeff  1 10.0  #20 sigma for realistic DNA (1 bead = 2.5 nm)
+
+####################################
+####	PAIRS	             #######
+####################################
+pair_style  soft 1.122
+pair_modify     shift yes
+pair_coeff      * * 2 1.122
+variable prefactor equal ramp(0,5)
+fix push all adapt 1 pair soft a * * v_prefactor
+
+####################################
+####	FENE	             #######
+####################################
+bond_style   harmonic
+special_bonds lj 1 1 1
+bond_coeff   1  50.0   1.1
+
+####################################
+####	FIXES	             #######
+####################################
+fix 1 all   nve  
+fix 2 all  langevin   1.0 1.0   1.0   424242 
+comm_style tiled
+fix bal all balance 100000 1.1 rcb
+compute GYR all gyration 
+####################################
+####	THERMO AND INTEGRATION
+####################################
+thermo 100
+thermo_style   custom   step  temp  epair vol cpu c_GYR
+dump 1 all custom 1000 ${folder}/PrepAfterBalls1_WarmUP.RW${jn}.lammpstrj id mol type xu yu zu vx vy vz
+
+####################################
+####	RUN
+####################################
+timestep 0.005 #for warmp up run
+run 1000
+write_data ${folder}/WarmedUP.46Chr.${jn}
+
+
+stop
+
+
+########################
+########################
+########################
+########################
+########################
+########################
+
+#STOP HERE
+
+########################
+########################
+########################
+########################
+########################
+########################
+
+
+#LEAVE BELOW
+
+
+
+####################################
+####	RESET TIME             #######
+####################################
+thermo 100
+reset_timestep 0
+timestep 0.01
+fix WALLall all indent 5 sphere 0.0 0.0 0.0 80.0 side in
+run 10000
+unfix WALLall
+fix WALLall all indent 10 sphere 0.0 0.0 0.0 75.0 side in
+run 10000
+unfix WALLall
+fix WALLall all indent 10 sphere 0.0 0.0 0.0 70.0 side in
+unfix WALLall
+
+reset_timestep 0
+unfix push
+pair_style  soft 2.5
+pair_modify     shift yes
+pair_coeff      * * 50 1.122
+angle_style   cosine
+angle_coeff  1 3.0  #20 sigma for realistic DNA (1 bead = 2.5 nm)
+
+######################################################
+##########		MAKE NUCLEAR LAM 	######
+######################################################
+region s1 sphere 0.0 0.0 0.0 71 side in
+region s2 sphere 0.0 0.0 0.0 70.5 side out
+region shell intersect 2 s1 s2
+create_atoms 10 random 5000 2342342 shell
+region shell delete 
+
+group nomob type 9 10
+group mobil subtract all nomob
+
+#######################
+####	WALL	 ######
+#######################
+#
+fix WALLall mobil indent 10 sphere 0.0 0.0 0.0 71.0 side in
+
+#
+pair_style  soft 2.5
+pair_modify     shift yes
+pair_coeff      * * 50 1.3
+angle_style   cosine
+angle_coeff  1 3.0  #20 sigma for realistic DNA (1 bead = 2.5 nm)
+#
+
+###
+unfix 1
+unfix 2
+fix 1 mobil   nve
+fix 2 mobil  langevin   1.0 1.0   1.0   424242
+run 1000
+
+write_data StartEqLAM.22ChrFromBalls.1
+
+stop 
+
+shell rm XYZ_${simname}.xyz
+shell rm Run_${simname}.lammpstrj 
+dump 4 all xyz 1 XYZ_${simname}.xyz
+dump_modify 4 element H O Au Al B N Ca Fe Hg Li  append yes
+run 1
+undump 4
+reset_timestep 0 
+
+
+########################################################
+#########################################################
+
+#########################################
+## WRITE RESTART ##
+#######################################
+variable wname index dataRestart.${simname}.
+variable newname index newdataRestart.${simname}.
+
+write_data ${wname}0
+#shell cp ${wname}0 ${newname}0
+shell ./WritePolymerase 0 ${wname} ${newname} ${ratePoly} ${jf}
+##
+
+######################################################
+#### SET LOOPING, UPDATE GROUPS AND THEIR NUMBERS ##
+#######################################################
+
+variable nloops equal (100000000.0+${Dt})/${Dt}
+variable a loop ${nloops}
+label start_loop
+variable mytime equal (${a}-1)*${Dt}
+shell echo ${mytime}
+##
+clear
+units lj
+atom_style angle 
+boundary        p p p
+neighbor 1.1 bin
+neigh_modify every 1 delay 1 check yes
+variable seed delete
+variable seed equal floor(${mytime}/${Dt}*10+3+${jn})
+##
+restart 10000000 ${folder}/Restart.${simname}.
+variable rnewname index newdataRestart.${simname}.
+read_data ${rnewname}${mytime}
+##
+variable Tleave equal (${a}-1)%1000
+if "${Tleave}!=0" then "shell rm ${rnewname}${mytime}"
+if "${Tleave}==0" then "shell mv ${rnewname}${mytime} DataFiles/${rnewname}${mytime}"
+
+#######################
+####	GROUPS	 ######
+#######################
+group polychange type 1 6 7
+group prom type 2
+group lam type 3
+group pcg type 4
+group mix type 5
+group het type 6
+group act type 7
+group laminafix type 9 10
+group mobile subtract all laminafix
+#######################
+####	WALL	 ######
+#######################
+
+variable Elam equal 5.0
+variable ElamH equal 1.0
+#
+fix WALLall mobile indent 10 sphere 0.0 0.0 0.0 71.0 side in
+
+#######################################################
+####	PAIRS -- REPULSIVE + REDS FERROMAGN 	#######
+#######################################################
+#ENERGYSCALE
+variable Etrue equal 1.0*${E}/${Norm}
+variable Etruehet equal 1.0*${E}/${Norm}
+variable Etruepcg equal 1.5*${E}/${Norm}
+variable EtrueLamFix equal 4.0*${E}/${Norm}
+#
+variable EtrueEnh equal 1.5*${E}/${Norm}
+variable EtrueAct equal 0.0*${E}/${Norm}
+
+pair_style hybrid lj/cut 1.8 soft 1.12246152962189
+pair_modify     shift yes
+pair_coeff * * soft 20.0 1.12246152962189
+
+#PROMOTERS
+pair_coeff 2 2  lj/cut  ${EtrueEnh} 1.0 1.8
+
+#HETEROCHROM
+pair_coeff 6 6 lj/cut  ${Etruehet} 1.0 1.8
+
+##POLII
+#pair_coeff 7 7 lj/cut  ${EtrueAct} 1.0 1.8
+pair_coeff 7 7 lj/cut  1.0 1.0 1.12246152962189
+
+##MIX
+pair_coeff 3 5 lj/cut  ${Etrue} 1.0 1.8
+pair_coeff 4 5 lj/cut  ${Etrue} 1.0 1.8
+pair_coeff 5 5 lj/cut  ${Etrue} 1.0 1.8
+
+##PCG
+pair_coeff 4 4 lj/cut  ${Etruepcg} 1.0 1.8
+
+##LAMfix
+pair_coeff 5 10 lj/cut  ${EtrueLamFix} 1.0 1.8
+pair_coeff 3 10 lj/cut  ${EtrueLamFix} 1.0 1.8
+pair_coeff 10 10 lj/cut  0.0 0.0 0.0
+pair_coeff 9 9 lj/cut  0.0 0.0 0.0
+#######################################################
+
+####################################
+####	ANGLE	             #######
+####################################
+angle_style   cosine
+angle_coeff  1 3.0  #20 sigma for realistic DNA (1 bead = 2.5 nm)
+
+########################
+## PER PRIMI VICINI   ##
+########################
+bond_style harmonic 
+special_bonds lj 1 1 1
+bond_coeff   1  100.0   1.1
+
+####################################
+####	FIXES	             #######
+####################################
+fix 1 mobile   nve  
+fix 2 mobile  langevin   1.0 1.0   1.0   ${seed} 
+comm_style tiled
+fix bal all balance 100000 1.1 rcb 
+compute GYR all gyration 
+thermo 1000
+thermo_style   custom  v_mytime  step  temp  epair vol cpu c_GYR 
+
+####################################
+####	DUMPS	             #######
+####################################
+variable run1 equal ${Dt}-1
+variable tt equal (${a}-1)*${Dt}
+variable Tdump equal (${a}-1)%1
+variable Tdump1 equal (${a}-2)%1
+variable Tdump2 equal (${a}-1)%1
+variable TdumpT equal (${a})%5
+#shell echo ${Tdump} 
+##DAT
+if "${Tdump2}==0" then "dump 2 all custom ${Dt} ${folder}/${simname}.${tt} id type x y z ix iy iz"
+if "${Tdump2}==0" then 'dump_modify   2   format "%d %d %.5f %.5f %.5f %d %d %d"'
+variable tt delete
+##XYZ
+if "${a}==0" then "shell echo DUMPING LOOP XYZ ${Tdump}"
+if "${a}==0" then "dump 4 all xyz ${Dt} XYZ_${simname}.xyz"
+if "${a}==0" then "dump_modify 4 element H O Au Al B N Ca Fe Hg Li  append yes"
+#
+#if "${Tdump}==0" then "shell echo DUMPING DYN XYZ ${Tdump}"
+#if "${Tdump}==0" then "dump 4 all xyz ${Dt} XYZ_${simname}.xyz"
+#if "${Tdump}==0" then "dump_modify 4 element H O Au Al B N Ca Fe Hg Li  append yes"
+#
+################################################
+## RUN MD steps and leave 1 for recolouring
+################################################
+run ${run1}
+################################################
+if "${a}==0" then "undump 4"
+
+####################################
+####	SWAP - ATOMS         #######
+####################################
+group polychange type 1 6 7
+variable nm equal  floor(count(polychange)/5.)
+fix Aswap polychange atom/swap ${Dt} ${nm} ${seed} ${TP} semi-grand yes types 1 6 delta_mu 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+
+#group lam type 3 6 7
+#variable nlam equal floor(count(lam)/5.)
+#fix Aswap1 lam atom/swap ${Dt} ${nlam} ${seed} ${TP} semi-grand yes types 1 3 6 delta_mu 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+
+variable Swaps equal f_Aswap[2]/1.0
+variable Attempts equal f_Aswap[1]/1.0
+thermo_style  custom  v_mytime  step  temp  epair vol cpu c_GYR  v_Attempts v_Swaps
+#
+#
+#######################
+####	RUN     #######
+#######################
+##XYZ
+#if "${Tdump}==0" then "undump 4"
+#if "${Tdump1}==0" then "undump 4"
+if "${Tdump}==0" then "dump 4 all xyz ${Dt} XYZ_${simname}.xyz"
+if "${Tdump}==0" then "dump_modify 4 element H O Au Al B N Ca Fe Hg Li    append yes"
+if "${TdumpT}==0" then "dump 1 all custom ${Dt} Run_${simname}.lammpstrj id mol type xu yu zu vx vy vz"
+if "${TdumpT}==0" then "dump_modify 1 append yes"
+#
+run 1
+unfix Aswap
+#unfix Aswap1
+if "${TdumpT}==0" then "undump 1"
+#
+#
+variable wname index dataRestart.${simname}.
+variable newname index newdataRestart.${simname}.
+##
+shell echo "--------- POLYII ----------------"
+variable mytime1 equal ${a}*${Dt}
+write_data ${wname}${mytime1}
+shell ./WritePolymerase ${mytime1} ${wname} ${newname}  ${ratePoly} ${jf}
+variable Tleave1 equal ${a}%1000
+
+if "${Tleave1}!=0" then "shell rm ${wname}${mytime1}"
+if "${Tleave1}==0" then "shell mv ${wname}${mytime1} DataFiles/${wname}${mytime1}"
+#
+
+unfix WALLall 
+#unfix NUCall
+group polychange delete
+group prom delete
+group lam delete
+group pcg delete
+group mix delete
+group het delete
+group act delete
+if "${Tdump}==0" then "undump 4"
+variable nm delete
+variable nlam delete
+variable newname delete
+variable wname delete
+variable rnewname delete
+variable mytime delete
+variable mytime1 delete
+clear 
+
+next a
+jump SELF start_loop
+
+
+################
+## ULOOP    ####
+################
+clear
+variable rname delete
+variable simname delete
+variable folder delete
+variable seed delete
+variable E delete
+variable RW delete
+variable SimOutType delete
+variable SimInType delete
+variable jn delete
+variable jf delete
+variable dmu delete
+variable ratePoly delete
+variable ddmu delete
+
+next jbn
+jump SELF #last line!!!
+
+### If e.g. I run this on 10 partitions of 1 processor,
+### and initialise the variable with 'uloop N'
+### it will run 10 simulations with 'jobnumber' taking 
+### values 1-10. Then when a particular simulation finishes, the 
+### script will be run again with the next value of jobnumber, 
+### until N simulations have been run.
+## SO ULOOP IS "SERIAL" BUT FOR SURE 10x1 PROCs ARE ALWAYS BUSY
+##
