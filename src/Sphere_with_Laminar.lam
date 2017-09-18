@@ -1,0 +1,102 @@
+# Spere_with_Laminar.lam
+
+
+
+##################################################
+
+# Simulation box definitions
+
+units lj
+atom_style angle
+boundary		p p p
+neighbor 1.1 bin
+neigh_modify every 1 delay 1 check yes
+
+restart 10000 
+read_data ${rname}
+
+##################################################
+
+# Wall definition -- repulsive at the boundary
+
+change_box all x final -100 100 y final -100 100 z final -100 100  boundary f f f units box
+fix WALL all wall/lj126 xhi EDGE 1.0 1.0 1.122462048 xlo EDGE 1.0 1.0 1.122462048 yhi EDGE 1.0 1.0 1.122462048 ylo EDGE 1.0 1.0 1.122462048 zhi EDGE 1.0 1.0 1.122462048 zlo EDGE 1.0 1.0 1.122462048 units box
+fix WALLall all indent 10 sphere 0.0 0.0 0.0 70.0 side in # 70.0 side in
+
+##################################################
+
+# Pairwise potential
+# Use soft potential to remove overlapping beads
+# Strength of potential increases over time: prefactor = 0-10
+
+pair_style soft 25
+pair_modify shift yes
+pair_coeff * * 1 25.0
+variable prefactor equal ramp(0,10)
+fix push all adapt 1 pair soft a * * v_prefactor
+
+##################################################
+
+# No bond and angle potentials as there is only one bead per fibre
+
+##################################################
+
+# Output
+
+##################################################
+
+# Use Brownian dynamics
+
+fix 1 all nve
+fix 2 all langevin 1.0 1.0 1.0 766151
+
+##################################################
+
+# Equalibrate run
+
+run 1000
+undump 1
+unfix push
+
+##################################################
+
+# Make nuclear laminar
+
+region s1 sphere 0.0 0.0 0.0 71 side in
+region s2 sphere 0.0 0.0 0.0 70.5 side out
+region shell intersect 2 s1 s2
+create_atoms 11 random 5000 2342342 shell
+pair_coeff	 	*10 11 1 13.0
+pair_coeff		11 11 0.0 0.0
+
+##################################################
+
+# Create groups
+
+group nomob type 10
+group mobil subtract all nomob
+
+##################################################
+
+# Fixes
+
+unfix 1
+unfix 2
+fix 1 mobil   nve  
+fix 2 mobil  langevin   1.0 1.0   1.0   424242 
+comm_style tiled
+fix bal all balance 100000 1.1 rcb
+compute GYR all gyration 
+
+##################################################
+
+# Thermo and integration details
+
+thermo 100
+thermo_style   custom   step  temp  epair vol cpu c_GYR
+dump 2 all custom 100 Prep2_${simname}.lammpstrj id mol type xu yu zu vx vy vz
+
+##################################################
+
+# Equilibrate run 2
+
