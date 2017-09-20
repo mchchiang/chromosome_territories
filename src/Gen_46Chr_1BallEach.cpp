@@ -16,6 +16,13 @@ using namespace std;
 
 int main(int argc, char * argv[])
 {
+  if (argc < 2)
+	{
+	  cout << "Not enough arguments! Generation aborted." << endl;
+	  return 1;
+	}
+  char * outFile {argv[1]};
+
   const int haploidNum {23};
   const int numOfFibres {haploidNum*2};
   const long chromoLength [numOfFibres]
@@ -86,17 +93,17 @@ int main(int argc, char * argv[])
       readLAM >> bin >> ch >> lamStart >> lamEnd;
       ch.erase(0, chrPrefix.length());
 
-      if (ch != "" && ch != "Y") // Ignore chrY data
-	{
-	  if (ch == "X")
-	    chromo = haploidNum;
-	  else 
-	    chromo = stoi(ch, nullptr, 10);
-
-	  lamContent = (lamEnd - lamStart) / chromoLength[chromo-1];
-	  laminar[chromo-1][0] += lamContent;
-	  laminar[chromo+haploidNum-1][0] += lamContent;
-	}
+      if (ch != "" && ch != "Y") // Ignore chrY data - model female cell
+		{
+		  if (ch == "X")
+			chromo = haploidNum;
+		  else 
+			chromo = stoi(ch, nullptr, 10);
+		  
+		  lamContent = (lamEnd - lamStart) / chromoLength[chromo-1];
+		  laminar[chromo-1][0] += lamContent;
+		  laminar[chromo+haploidNum-1][0] += lamContent;
+		}
     }
 
   readLAM.close();
@@ -106,18 +113,18 @@ int main(int argc, char * argv[])
   // Assigning colour depending on laminar content
   // Binning contact strength into 10 categories (1-10)
   cout << "Assigning contact strength type to each chromosome" << endl;
-  int numOfBins {10};
+  int numOfFibreTypes {10};
   double min {0.1};
   double max {0.6};
-  double binWidth = (max - min) / numOfBins;
+  double binWidth = (max - min) / numOfFibreTypes;
   int binNum {};
 
   for (int i {}; i < numOfFibres; i++)
     for (int j {}; j < numOfBeadsInChromo[i]; j++)
       {
-	binNum = static_cast<int>((laminar[i][j] - min) / binWidth + 1);
-	if (binNum < 0) binNum = 0;
-	colour[i][0] = binNum;
+		binNum = static_cast<int>((laminar[i][j] - min) / binWidth + 1);
+		if (binNum < 0) binNum = 0;
+		colour[i][0] = binNum;
       }
 
   // Output total laminar content for each chromosome
@@ -127,14 +134,14 @@ int main(int argc, char * argv[])
        << setw(15) << "LAM content"
        << setw(15) << "Bin/Type"
        << endl;
-
+  
   for (int i {}; i < numOfFibres; i++)
     {
       cout << setw(15) << (i+1)
-	   << setw(15) << (chromoLength[i] / 1000000.0)
-	   << setw(15) << laminar[i][0]
-	   << setw(15) << colour[i][0]
-	   << endl;
+		   << setw(15) << (chromoLength[i] / 1000000.0)
+		   << setw(15) << laminar[i][0]
+		   << setw(15) << colour[i][0]
+		   << endl;
     }
   
   // Creating the polymer
@@ -143,40 +150,109 @@ int main(int argc, char * argv[])
   int localNumOfBeads {};
   int angleIndex {};
   int bondIndex {};
-
+  
   for (int i {}; i < numOfFibres; i++)
     {
       localNumOfBeads = numOfBeadsInChromo[i];
       // Store bonds
       for (int j {}; j < localNumOfBeads-1; j++)
-	{
-	  bond[bondIndex][0] = j+startBead;
-	  bond[bondIndex][1] = j+1+startBead;
-	  bondIndex++;
-	}
-
+		{
+		  bond[bondIndex][0] = j+startBead;
+		  bond[bondIndex][1] = j+1+startBead;
+		  bondIndex++;
+		}
+	  
       // Store angles
       for (int j {}; j < localNumOfBeads-2; j++)
-	{
-	  angle[angleIndex][0] = j+startBead;
-	  angle[angleIndex][1] = j+1+startBead;
-	  angle[angleIndex][2] = j+2+startBead;
-	  angleIndex++;
-	}
-
-      startBead += numOfBeadsInChromo[i];
+		{
+		  angle[angleIndex][0] = j+startBead;
+		  angle[angleIndex][1] = j+1+startBead;
+		  angle[angleIndex][2] = j+2+startBead;
+		  angleIndex++;
+		}
+	  startBead += numOfBeadsInChromo[i];
     }
-
+  
   // Generate position of each bead
   srand(time(NULL)); // Initialise the random generator
   
-  double theta[2];
-  double non {static_cast<double>(rand())/static_cast<double>(RAND_MAX)};
-  double tilt {0};
-  double shift[3] {0.0, 0.0, 0.0};
-  double sh[2] {cos(non*92*M_PI/46.0), sin(non*92*M_PI/46.0)};
-  double R {5.0};
+  // Generate each bead's position randomly within the laminar
   
+  const double buffer {10.0};
+  const double maxRadius {lx/2-buffer};
+  double pi {M_PI};
+  
+  double u {}, v {}, w {};
+  double r {}, theta {}, phi {};
+  double x {}, y {}, z {};
+
+  for (int i {}; i < numOfFibres; i++)
+	{
+	  u = static_cast<double>(rand())/static_cast<double>(RAND_MAX);
+	  v = static_cast<double>(rand())/static_cast<double>(RAND_MAX);
+	  w = static_cast<double>(rand())/static_cast<double>(RAND_MAX);
+	  r = maxRadius * pow(u, 1.0/3.0);
+	  theta = acos(1 - 2 * v);
+	  phi = 2 * pi * w;
+	  x = r * sin(theta) * cos(phi);
+	  y = r * sin(theta) * sin(phi);
+	  z = r * cos(theta);
+	  position[i][0][0] = x;
+	  position[i][0][1] = y;
+	  position[i][0][2] = z;
+	}
+
+  // Writing the input file for LAMMPS
+  ofstream lammpsFile;
+  lammpsFile.open(outFile);
+  
+  lammpsFile << "LAMMPS data file from restart file: "
+		 << "timestep = 0,\t procs = 1" << endl;
+  lammpsFile << totalBeads << " atoms " << endl;
+  lammpsFile << 0 << " bonds " << endl; // no bonds
+  lammpsFile << 0 << " angles " << endl; // no angles
+  lammpsFile << "\n";
+  lammpsFile << numOfFibreTypes+1 << " atom types " << endl; // include laminar
+  lammpsFile << 1 << " bond types " << endl;
+  lammpsFile << 1 << " angle types " << endl;
+  lammpsFile << "\n";
+  lammpsFile << -lx/2.0 << " " << (lx-lx/2.0) << " xlo xhi" << endl;
+  lammpsFile << -ly/2.0 << " " << (ly-ly/2.0) << " ylo yhi" << endl;
+  lammpsFile << -lz/2.0 << " " << (lz-lz/2.0) << " zlo zhi" << endl;
+  
+  lammpsFile << "\nMasses\n" << endl;
+  for (int i {1}; i <= numOfFibreTypes+1; i++) //including laminar type 
+	lammpsFile << i << " " << 1 << endl; 
+  
+  // Writing atoms' positions
+  int beadIndex {1};
+  lammpsFile << "\nAtoms\n" << endl;
+  for 
+	(int i {}; i < numOfFibres; i++){
+	for (int j = 0; j < numOfBeadsInChromo[i]; j++){
+	  lammpsFile << beadIndex << " " << i+1 << " " << colour[i][j] << " " 
+			 << position[i][j][0] << " " 
+			 << position[i][j][1] << " " 
+			 << position[i][j][2] << " " 
+			 << 0 << " " << 0 << " " << 0 << endl;
+	  beadIndex++;
+	}
+  }
+  
+  lammpsFile << endl;
+  lammpsFile << endl;
+
+  // Writing atoms' velocities
+  lammpsFile << "\nVelocities\n" <<endl;
+  
+  for (int i {}; i < totalBeads; i++) 
+	lammpsFile << i+1 << " " << 0 << " " << 0 << " " << 0 << endl;
+  
+  lammpsFile << endl;
+  
+  // No output for bonds and angles (as there is only one bead per polymer)
+  
+  lammpsFile.close();
   
 }
 
