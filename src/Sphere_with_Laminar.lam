@@ -1,6 +1,10 @@
 # Spere_with_Laminar.lam
 
+##################################################
 
+# Variables and definitions
+
+variable btime equal (step*DELTA_T)
 
 ##################################################
 
@@ -12,16 +16,16 @@ boundary		p p p
 neighbor 1.1 bin
 neigh_modify every 1 delay 1 check yes
 
-restart 10000 
-read_data ${rname}
+restart RESTART_FREQ RESTART_FILE
+read_data INIT_FILE
 
 ##################################################
 
 # Wall definition -- repulsive at the boundary
 
-change_box all x final -100 100 y final -100 100 z final -100 100  boundary f f f units box
+change_box all x final XLO XHI y final YLO YHI z final ZLO ZHI  boundary f f f units box
 fix WALL all wall/lj126 xhi EDGE 1.0 1.0 1.122462048 xlo EDGE 1.0 1.0 1.122462048 yhi EDGE 1.0 1.0 1.122462048 ylo EDGE 1.0 1.0 1.122462048 zhi EDGE 1.0 1.0 1.122462048 zlo EDGE 1.0 1.0 1.122462048 units box
-fix WALLall all indent 10 sphere 0.0 0.0 0.0 70.0 side in # 70.0 side in
+fix WALLall all indent 10 sphere 0.0 0.0 0.0 70.0 side in
 
 ##################################################
 
@@ -41,20 +45,30 @@ fix push all adapt 1 pair soft a * * v_prefactor
 
 ##################################################
 
-# Output
-
-##################################################
-
 # Use Brownian dynamics
 
 fix 1 all nve
-fix 2 all langevin 1.0 1.0 1.0 766151
+fix 2 all langevin 1.0 1.0 1.0 PREP1_SEED
+
+##################################################
+
+# Set timestep of integrator
+
+timestep DELTA_T
+
+##################################################
+
+# Output
+
+thermo PREP1_PRINTFREQ
+thermo_style custom v_btime temp epair vol
+dump 1 all custom PREP1_PRINTFREQ PREP1_OUTFILE id mol type xu yu zu vx vy vz
 
 ##################################################
 
 # Equalibrate run
 
-run 1000
+run PREP1_TIME
 undump 1
 unfix push
 
@@ -62,19 +76,19 @@ unfix push
 
 # Make nuclear laminar
 
-region s1 sphere 0.0 0.0 0.0 71 side in
-region s2 sphere 0.0 0.0 0.0 70.5 side out
+region s1 sphere 0.0 0.0 0.0 OUT_RADIUS side in # 71 side in
+region s2 sphere 0.0 0.0 0.0 IN_RADIUS side out # 70.5 side out
 region shell intersect 2 s1 s2
-create_atoms 11 random 5000 2342342 shell
-pair_coeff	 	*10 11 1 13.0
-pair_coeff		11 11 0.0 0.0
+create_atoms 11 random LAM_ATOMS LAM_SEED shell
+pair_coeff *10 11 1 13.0
+pair_coeff 11 11 0.0 0.0
 
 ##################################################
 
 # Create groups
 
-group nomob type 10
-group mobil subtract all nomob
+group nomob type 11 # Atoms forming the laminar
+group mobil subtract all nomob # Chromosome spheres
 
 ##################################################
 
@@ -82,21 +96,82 @@ group mobil subtract all nomob
 
 unfix 1
 unfix 2
-fix 1 mobil   nve  
-fix 2 mobil  langevin   1.0 1.0   1.0   424242 
+fix 1 mobil nve  
+fix 2 mobil langevin 1.0 1.0 1.0 PREP2_SEED 
 comm_style tiled
 fix bal all balance 100000 1.1 rcb
 compute GYR all gyration 
 
 ##################################################
 
-# Thermo and integration details
+# Output
 
-thermo 100
-thermo_style   custom   step  temp  epair vol cpu c_GYR
-dump 2 all custom 100 Prep2_${simname}.lammpstrj id mol type xu yu zu vx vy vz
+thermo PREP2_PRINTFREQ
+thermo_style custom v_btime temp epair vol c_GYR
+dump 2 all custom PREP2_PRINTFREQ PREP2_OUTFILE id mol type xu yu zu vx vy vz
 
 ##################################################
 
 # Equilibrate run 2
 
+reset_timestep 0
+run PREP2_TIME
+undump 2
+
+##################################################
+
+# Pairwise interaction between spheres and laminar
+
+pair_style hybrid lj/cut 15 soft 25
+pair_modify shift yes
+pair_coeff * * soft 50.0 25.0
+pair_coeff 11 11 soft 0.0 0.0
+
+##1-10 ARE TYPES OF BEADS
+##11 IS TYPE OF OUTER LAYER
+pair_coeff 1 11 lj/cut 1 13.0 14.5920066280218 #LOW LADs
+pair_coeff 2 11 lj/cut 1 13.0 14.5920066280218
+pair_coeff 3 11 lj/cut 1 13.0 14.5920066280218
+pair_coeff 4 11 lj/cut 1 13.0 14.5920066280218
+#
+pair_coeff 5 11 lj/cut 1.0 13.0 24.5920066280218
+pair_coeff 6 11 lj/cut 1.0 13.0 24.5920066280218
+pair_coeff 7 11 lj/cut 1.0 13.0 24.5920066280218
+#
+pair_coeff 8 11 lj/cut 2.0 13.0 24.5920066280218
+pair_coeff 9 11 lj/cut 2.0 13.0 24.5920066280218
+pair_coeff 10 11 lj/cut 2.0 13.0 24.5920066280218 #HIGH LADs
+
+##################################################
+
+# Actual run (create MAX_SAMPLES uncorrelated samples)
+
+reset_timestep 0
+
+dump 2 all custom RUN_PRINTFREQ RUN_OUTFILE id mol type xu yu zu vx vy vz
+dump 3 all xyz RUN_PRINTFREQ POS_FILE
+dump_modify 3 element O N C F S B Na Mg Li Be H append yes
+
+variable loopindex loop MAX_SAMPLES
+label loop
+
+unfix 1
+unfix 2
+fix 1 mobil nve
+fix 2 mobil langevin 1.0 5.0 1.0 RUN_SEED
+run RUN_TIME
+
+unfix 1
+unfix 2
+fix 1 mobil nve
+fix 2 mobil langevin 5.0 1.0 1.0 RUN_SEED
+run RUN_TIME
+
+write_data SAMPLE_FILE_${loopindex}.dat
+
+##################################################
+
+next loopindex
+jump SELF loop
+
+##################################################
