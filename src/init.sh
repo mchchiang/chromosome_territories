@@ -60,7 +60,7 @@ mkdir $run_dir
 # Create the lammps command file based on template
 lammps_file="${sim_name}.lam"
 file="${run_dir}/${lammps_file}"
-cp Sphere_with_laminar.lam $file
+cp Sphere_with_Laminar.lam $file
 
 # Replace macros in template with input values
 sed -i -- "s/INIT_FILE/${init_file}/g" $file
