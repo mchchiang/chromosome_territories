@@ -20,7 +20,7 @@ nzCol = 8
 boxSize = 200.0
 
 # For storing distances for each ball
-numOfBins = 10
+numOfBins = 50
 maxBinNum = numOfBins-1
 minBinNum = 0
 min = 0.0
@@ -78,7 +78,7 @@ print fileCount
 
 for i in xrange(numOfChromos):
     for j in xrange(numOfBins):
-        distrb[i][j] / float(fileCount)
+        distrb[i][j] /= float(fileCount)
 
 # Output distribution
 writer = open(outFile, "w")
