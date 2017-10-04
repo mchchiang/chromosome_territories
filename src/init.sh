@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# An input script for setting parameters in the LAMMPS config file
+
 # Read in and set parameters
 run=$1            # trial number
 run_dir=$2        # run directory
@@ -33,6 +35,33 @@ lam_atoms=5000
 lam_seed=56213
 
 delta_t=0.01       # time step size in Brownian time units
+
+# Interaction energy parameters
+# LJ potentials
+sigma=13.0
+low_e=0.5
+low_cutoff=$(python -c "print '%.13f' % (2.0**(1.0/6.0)*$sigma)") # repulsive
+mid_e=0.5
+mid_cutoff=$(python -c "print '%.13f' % (1.8*$sigma)")
+high_e=1.0
+high_cutoff=$(python -c "print '%.13f' % (1.8*$sigma)")
+
+# Normalisation (ensure minimum of potential is actually epsilon)
+mid_norm=$(python -c "print '%.13f' % (1.0 + 4.0*(($sigma/$mid_cutoff)**12-($sigma/$mid_cutoff)**6))")
+high_norm=$(python -c "print '%.13f' % (1.0 + 4.0*(($sigma/$high_cutoff)**12-($sigma/$high_cutoff)**6))")
+
+echo "Mid norm = $mid_norm"
+echo "High norm = $high_norm"
+
+mid_e=$(python -c "print '%.13f' % ($mid_e/$mid_norm)")
+high_e=$(python -c "print '%.13f' % ($high_e/$high_norm)")
+
+echo "Mid E = $mid_e"
+echo "High E = $high_e"
+
+# Soft potentials
+soft_a=10.0
+soft_cutoff=50.0
 
 # Set output file names
 sim_name="46Chr_1BallEach_NLAM_${lam_atoms}"
@@ -100,6 +129,18 @@ sed -i -- "s/SAMPLE_FILE/${sample_file}/g" $file
 sed -i -- "s/POS_FILE/${pos_file}/g" $file
 
 sed -i -- "s/DELTA_T/${delta_t}/g" $file
+
+sed -i -- "s/SIGMA/${sigma}/g" $file
+
+sed -i -- "s/LOW_E/${low_e}/g" $file
+sed -i -- "s/MID_E/${mid_e}/g" $file
+sed -i -- "s/HIGH_E/${high_e}/g" $file
+sed -i -- "s/LOW_CUTOFF/${low_cutoff}/g" $file
+sed -i -- "s/MID_CUTOFF/${mid_cutoff}/g" $file
+sed -i -- "s/HIGH_CUTOFF/${high_cutoff}/g" $file
+
+sed -i -- "s/SOFT_A/${soft_a}/g" $file
+sed -i -- "s/SOFT_CUTOFF/${soft_cutoff}/g" $file
 
 # Generate spheres
 

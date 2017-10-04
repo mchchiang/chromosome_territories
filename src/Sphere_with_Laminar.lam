@@ -16,7 +16,7 @@ boundary		p p p
 neighbor 1.1 bin
 neigh_modify every 1 delay 1 check yes
 
-restart RESTART_FREQ RESTART_FILE
+#restart RESTART_FREQ RESTART_FILE
 read_data INIT_FILE
 
 ##################################################
@@ -124,23 +124,23 @@ undump 2
 
 pair_style hybrid lj/cut 15 soft 25
 pair_modify shift yes
-pair_coeff * * soft 50.0 25.0
+pair_coeff * * soft SOFT_A SOFT_CUTOFF
 pair_coeff 11 11 soft 0.0 0.0
 
 ##1-10 ARE TYPES OF BEADS
 ##11 IS TYPE OF OUTER LAYER
-pair_coeff 1 11 lj/cut 1 13.0 14.5920066280218 #LOW LADs
-pair_coeff 2 11 lj/cut 1 13.0 14.5920066280218
-pair_coeff 3 11 lj/cut 1 13.0 14.5920066280218
-pair_coeff 4 11 lj/cut 1 13.0 14.5920066280218
+pair_coeff 1 11 lj/cut LOW_E SIGMA LOW_CUTOFF #LOW LADs
+pair_coeff 2 11 lj/cut LOW_E SIGMA LOW_CUTOFF
+pair_coeff 3 11 lj/cut LOW_E SIGMA LOW_CUTOFF
+pair_coeff 4 11 lj/cut LOW_E SIGMA LOW_CUTOFF
 #
-pair_coeff 5 11 lj/cut 1.0 13.0 24.5920066280218
-pair_coeff 6 11 lj/cut 1.0 13.0 24.5920066280218
-pair_coeff 7 11 lj/cut 1.0 13.0 24.5920066280218
+pair_coeff 5 11 lj/cut MID_E SIGMA MID_CUTOFF
+pair_coeff 6 11 lj/cut MID_E SIGMA MID_CUTOFF
+pair_coeff 7 11 lj/cut MID_E SIGMA MID_CUTOFF
 #
-pair_coeff 8 11 lj/cut 2.0 13.0 24.5920066280218
-pair_coeff 9 11 lj/cut 2.0 13.0 24.5920066280218
-pair_coeff 10 11 lj/cut 2.0 13.0 24.5920066280218 #HIGH LADs
+pair_coeff 8 11 lj/cut HIGH_E SIGMA HIGH_CUTOFF
+pair_coeff 9 11 lj/cut HIGH_E SIGMA HIGH_CUTOFF
+pair_coeff 10 11 lj/cut HIGH_E SIGMA HIGH_CUTOFF #HIGH LADs
 
 ##################################################
 
