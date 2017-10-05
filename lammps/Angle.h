@@ -8,19 +8,25 @@
 
 using std::shared_ptr;
 
-class Angle {
+class Angle : std::enable_shared_from_this<Angle> {
 
 private:
-  shared_ptr<Bead>[3];
-  Angle(); // Private constructor - must use static method to create a bond
+  static const int numOfBeads;
+  int type;
+  shared_ptr<Bead> beads[3];
 
 public:
+
+  // Constructor
+  Angle(int type, shared_ptr<Bead> bead1, 
+		shared_ptr<Bead> bead2, shared_ptr<Bead> bead3);
+
+  // Accessor methods
   shared_ptr<Bead> getBead(int id);
+  void setType(int type);
+  int getType();
+
   void unbond();
-  static void createAngle(int type, shared_ptr<Bead> bead1, 
-			 shared_ptr<Bead> bead2, shared_ptr<Bead> bead3);
-  static void removeAngle(shared_ptr<Bead> bead1, shared_ptr<Bead> bead2,
-			  shared_ptr<Bead> bead3);
 };
 
 #endif
