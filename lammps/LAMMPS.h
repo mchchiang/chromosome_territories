@@ -19,13 +19,13 @@ using std::stringstream;
 class LAMMPS {
   
 private:
-  vector< shared_ptr<Polymer> > polymers;
-  vector< shared_ptr<Bead> > beads;
+  vector< shared_ptr<Polymer> > polymers {};
+  vector< shared_ptr<Bead> > beads {};
   
   // Box size
-  double lx;
-  double ly;
-  double lz;
+  double lx {};
+  double ly {};
+  double lz {};
 
   int typesOfBeads {1};
   int typesOfBonds {0};
@@ -47,20 +47,26 @@ public:
   
   // Accessor methods
   shared_ptr<Polymer> getPolymer(int id);
-  shared_ptr<Bead> getBeadr(int id);
+  shared_ptr<Bead> getBead(int id);
 
+  void setLx(double lx);
   double getLx();
+  void setLy(double ly);
   double getLy();
+  void setLz(double lz);
   double getLz();
 
   int getNumOfBeads();
   int getNumOfBonds();
   int getNumOfAngles();
+  void setTypesOfBeads();
   int getTypesOfBeads();
+  void setTypesOfBonds();
   int getTypesOfBonds();
+  void setTypesOfAngles();
   int getTypesOfAngles();
-
-  int addPolymer(shared_ptr<Polymer> polymer);
+  
+  void addPolymer(int id, shared_ptr<Polymer> polymer);
   void removePolymer(int id);
 
   bool importData(string inFile, string mapFile);

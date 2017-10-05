@@ -9,7 +9,7 @@
 using std::map;
 using std::shared_ptr;
 
-class Bead : std::enable_shared_from_this<Bead> {
+class Bead : public std::enable_shared_from_this<Bead> {
   
 private:
   double position [3];
@@ -20,7 +20,7 @@ private:
 
 public:
   // Inner classes - For storing bonds and angles
-  class Bond : std::enable_shared_from_this<Bond> {
+  class Bond : public std::enable_shared_from_this<Bond> {
 	
   private:
 	const int numOfBeads {2};
@@ -39,7 +39,7 @@ public:
 	void unbond();
   };
 
-  class Angle : std::enable_shared_from_this<Angle> {
+  class Angle : public std::enable_shared_from_this<Angle> {
 	
   private:
 	const int numOfBeads {3};
