@@ -3,10 +3,10 @@
 #ifndef BEAD_H
 #define BEAD_H
 
-#include <map>
+#include <vector>
 #include <memory>
 
-using std::map;
+using std::vector;
 using std::shared_ptr;
 
 class Bead : public std::enable_shared_from_this<Bead> {
@@ -17,7 +17,7 @@ private:
   int boundaryCount [3];
   int type;
   int label;
-
+  
 public:
   // Inner classes - For storing bonds and angles
   class Bond : public std::enable_shared_from_this<Bond> {
@@ -77,6 +77,11 @@ public:
   int getType();
   void setLabel(int label);
   int getLabel();
+  shared_ptr<Bond> getBondWith(shared_ptr<Bead> bead);
+  shared_ptr<Angle> getAngleWith(shared_ptr<Bead> bead1,
+								 shared_ptr<Bead> bead2);
+  vector< shared_ptr<Bond> >& getBonds();
+  vector< shared_ptr<Angle> >& getAngles();
 
   // For modifying bonds and angles
   void addBond(shared_ptr<Bond> bond);
@@ -90,10 +95,10 @@ public:
   void removeAllBonds();
   void removeAllAngles();
 
-private:
-  map< shared_ptr<Bond>, shared_ptr<Bond> > bondList {};
-  map< shared_ptr<Angle>, shared_ptr<Angle> > angleList {};
 
+private:
+  vector< shared_ptr<Bond> > bondList {};
+  vector< shared_ptr<Angle> > angleList {};
 };
 
 #endif

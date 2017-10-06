@@ -29,7 +29,8 @@ public:
   // For changing the polymer
   void addBead(int id, shared_ptr<Bead> bead);
   void removeBead(int id);
-  
+  void removeAllBeads();
+
   // Static factory methods
   static shared_ptr<Polymer> createRandomWalkPolymer(int numOfBeads,
 						     double lx, double ly, 
