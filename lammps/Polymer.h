@@ -19,6 +19,7 @@ public:
   // Constructor
   Polymer(); 
   Polymer(int numOfBeads);
+  Polymer(int numOfBeads, bool createBead);
 
   // Accessor methods
   shared_ptr<Bead> getBead(int id);
@@ -27,6 +28,7 @@ public:
   int getNumOfBeads();
 
   // For changing the polymer
+  void addBead(shared_ptr<Bead> bead);
   void addBead(int id, shared_ptr<Bead> bead);
   void removeBead(int id);
   void removeAllBeads();

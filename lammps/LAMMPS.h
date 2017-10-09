@@ -5,6 +5,7 @@
 
 #include <map>
 #include <vector>
+#include <fstream>
 #include <sstream>
 #include <memory>
 #include <string>
@@ -14,13 +15,14 @@
 using std::map;
 using std::string;
 using std::vector;
+using std::ifstream;
 using std::stringstream;
 
 class LAMMPS {
   
 private:
-  vector< shared_ptr<Polymer> > polymers {};
-  vector< shared_ptr<Bead> > beads {};
+  map< int, shared_ptr<Polymer> > polymers {};
+  map< int, shared_ptr<Bead> > beads {};
   
   // Box size
   double lx {};
@@ -34,6 +36,25 @@ private:
   const int preci {15}; // precision for printing floating point numbers
   
   // Internal functions
+  bool readHeader (ifstream& reader, int& numOfBeads, 
+				   int& numOfBonds, int& numOfAngles);
+
+  bool readBoxSize(ifstream& reader);
+
+  bool readPosition(ifstream& reader, int& numOfBeads,
+					map< int, shared_ptr<Bead> >& beadIndexMap);
+  bool readVelocity(ifstream& reader, int& numOfBeads,
+					map< int, shared_ptr<Bead> >& beadIndexMap);
+
+  bool readBond(ifstream& reader, int& numOfBonds,
+				map< int, shared_ptr<Bead> >& beadIndexMap);
+  
+  bool readAngle(ifstream& reader, int& numOfAngles,
+				 map< int, shared_ptr<Bead> >& beadIndexMap);
+
+  void readInputMap(ifstream& reader,
+					  map< int, shared_ptr<Bead> >& beadIndexMap);
+
   void writePositionAndVelocity(const shared_ptr<Bead>& bead,
 								map< shared_ptr<Bead>, int >& beadIndexMap,
 								stringstream& positionWriter,
@@ -60,7 +81,7 @@ public:
 
   // Constructors
   LAMMPS();
-  LAMMPS(double x, double y, double OBz);
+  LAMMPS(double x, double y, double z);
 
   // Accessor methods
   shared_ptr<Polymer> getPolymer(int id);
@@ -83,15 +104,21 @@ public:
   void setTypesOfAngles(int type);
   int getTypesOfAngles();
   
-  void addBead(int id, shared_ptr<Bead> bead);
   void removeBead(int id);
-
-  void addPolymer(int id, shared_ptr<Polymer> polymer);
+  void removeAllBeads();
   void removePolymer(int id);
+  void removeAllPolymers();
 
   bool importData(string inFile, string mapFile);
   bool exportData(string outFile, string mapFile);
+  
+  shared_ptr<Polymer> createPolymer(int id, int nBeads);
+  shared_ptr<Polymer> createRandomWalkPolymer(int id, int nBeads);
+  shared_ptr<Bead> createBead(int id);
 
+private:
+  void addBead(int id, shared_ptr<Bead> bead);
+  void addPolymer(int id, shared_ptr<Polymer> polymer);
 };
 
 #endif

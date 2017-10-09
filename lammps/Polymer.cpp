@@ -15,30 +15,34 @@ using std::shared_ptr;
 using std::make_shared;
 
 // Constructors
-Polymer::Polymer(int nBeads){
+Polymer::Polymer(int nBeads, bool createBead){
 
   beads.reserve(nBeads);
 
-  int i {};
-  int type {};
-  
-  beads.push_back( make_shared<Bead>());
-  i++;
-
-  if (i < nBeads){
-    beads.push_back(make_shared<Bead>());
-    beads[i-1]->addBondWith(type, beads[i]);
+  if (createBead){
+	int i {};
+	int type {};
+	
+	beads.push_back( make_shared<Bead>());
 	i++;
-  }
-
-  for (; i < nBeads; i++){
-    beads.push_back(make_shared<Bead>());
-    beads[i-1]->addBondWith(type, beads[i]);
-    beads[i-2]->addAngleWith(type, beads[i-1], beads[i]);
+	
+	if (i < nBeads){
+	  beads.push_back(make_shared<Bead>());
+	  beads[i-1]->addBondWith(type, beads[i]);
+	  i++;
+	}
+	
+	for (; i < nBeads; i++){
+	  beads.push_back(make_shared<Bead>());
+	  beads[i-1]->addBondWith(type, beads[i]);
+	  beads[i-2]->addAngleWith(type, beads[i-1], beads[i]);
+	}
   }
 }
 
-Polymer::Polymer() : Polymer {0} {}
+Polymer::Polymer(int nBeads) : Polymer {nBeads, true} {}
+
+Polymer::Polymer() : Polymer {0, false} {} 
 
 // Accessor methods
 shared_ptr<Bead> Polymer::getBead(int id){
@@ -54,6 +58,10 @@ int Polymer::getNumOfBeads(){
 }
 
 // Adding or removing beads
+void Polymer::addBead(shared_ptr<Bead> bead){
+  beads.push_back(bead);
+}
+
 void Polymer::addBead(int id, shared_ptr<Bead> bead){
   beads.insert(beads.begin()+id, bead);
 }
