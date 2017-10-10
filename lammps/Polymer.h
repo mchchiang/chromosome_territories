@@ -20,6 +20,9 @@ public:
   Polymer(); 
   Polymer(int numOfBeads);
   Polymer(int numOfBeads, bool createBead);
+  Polymer(int numOfBeads, int beadType);
+  Polymer(int numOfBeads, int beadType, 
+	  int bondType, int angleType, bool createBead = true);
 
   // Accessor methods
   shared_ptr<Bead> getBead(int id);
@@ -32,11 +35,16 @@ public:
   void addBead(int id, shared_ptr<Bead> bead);
   void removeBead(int id);
   void removeAllBeads();
-
+  
+  // Statistics of polymer
+  vector<double> getCentreOfMass(double lx, double ly, double lz);
+  double getGyrationRadius(double lx, double ly, double lz);
+  
   // Static factory methods
   static shared_ptr<Polymer> createRandomWalkPolymer(int numOfBeads,
-						     double lx, double ly, 
-						     double lz);
+						     double x, double y,
+						     double z, double lx, 
+						     double ly, double lz);
 
 };
 

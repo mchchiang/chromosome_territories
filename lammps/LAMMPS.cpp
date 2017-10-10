@@ -106,9 +106,11 @@ void LAMMPS::addBead(int id, shared_ptr<Bead> bead){
 }
 
 void LAMMPS::removeBead(int id){
-  beads[id]->removeAllBonds();
-  beads[id]->removeAllAngles();
-  beads.erase(id);
+  if (beads.count(id) != 0){
+    beads[id]->removeAllBonds();
+    beads[id]->removeAllAngles();
+    beads.erase(id);
+  }
 }
 
 void LAMMPS::removeAllBeads(){
@@ -124,8 +126,10 @@ void LAMMPS::addPolymer(int id, shared_ptr<Polymer> polymer){
 }
 
 void LAMMPS::removePolymer(int id){
-  polymers[id]->removeAllBeads();
-  polymers.erase(id);
+  if (polymers.count(id) != 0){
+    polymers[id]->removeAllBeads();
+    polymers.erase(id);
+  }
 }
 
 void LAMMPS::removeAllPolymers(){
@@ -135,10 +139,32 @@ void LAMMPS::removeAllPolymers(){
   polymers.clear();
 }
 
-bool LAMMPS::importData(string inFile, string mapFile){
-  // Clear currently stored data
+void LAMMPS::clear(){
   removeAllPolymers();
   removeAllBeads();
+}
+
+bool LAMMPS::changeBeadID(int oldID, int newID){
+  if (beads.count(oldID) != 0 && beads.count(newID) == 0){
+    beads[newID] = beads[oldID];
+    beads.erase(oldID);
+    return true;
+  }
+  return false;
+}
+
+bool LAMMPS::changePolymerID(int oldID, int newID){
+  if (polymers.count(oldID) != 0 && polymers.count(newID) == 0){
+    polymers[newID] = polymers[oldID];
+    polymers.erase(oldID);
+    return true;
+  }
+  return false;
+}
+
+bool LAMMPS::importData(string inFile, string mapFile){
+  // Clear currently stored data
+  clear();
 
   cout << "Start reading LAMMPS file ..." << endl;
   
@@ -151,16 +177,16 @@ bool LAMMPS::importData(string inFile, string mapFile){
   string line {};
 
   if (!readHeader(reader, numOfBeads, numOfBonds, numOfAngles)){
-	reader.close();
-	cout << "Data file must specify number and types of "
-		 << "atoms, bonds, and angles." << endl;
-	return false;
+    reader.close();
+    cout << "Data file must specify number and types of "
+	 << "atoms, bonds, and angles." << endl;
+    return false;
   }
   
   if (!readBoxSize(reader)){
-	reader.close();
-	cout << "Data file must specify box size in all three dimensions." << endl;
-	return false;
+    reader.close();
+    cout << "Data file must specify box size in all three dimensions." << endl;
+    return false;
   }
   
   bool positionOK {false};
@@ -175,53 +201,53 @@ bool LAMMPS::importData(string inFile, string mapFile){
 
   // Create all the beads
   for (int i {1}; i <= numOfBeads; i++){
-	beadIndexMap[i] = make_shared<Bead>();
+    beadIndexMap[i] = make_shared<Bead>();
   }
 
   // Read position, velocity, bond, and angle data
   while (!reader.eof() && (!positionOK || !velocityOK || !bondOK || !angleOK)){
-	getline(reader, line);
+    getline(reader, line);
 	
-	// Read atoms' positions
-	if (line.find("Atoms") != string::npos && !positionOK){
-	  positionOK = readPosition(reader, numOfBeads, beadIndexMap);
+    // Read atoms' positions
+    if (line.find("Atoms") != string::npos && !positionOK){
+      positionOK = readPosition(reader, numOfBeads, beadIndexMap);
 
-	  // Read atoms' velocities
-	} else if (line.find("Velocities") != string::npos && !velocityOK){
-	  velocityOK = readVelocity(reader, numOfBeads, beadIndexMap);
+      // Read atoms' velocities
+    } else if (line.find("Velocities") != string::npos && !velocityOK){
+      velocityOK = readVelocity(reader, numOfBeads, beadIndexMap);
 
-	  // Read bonds
-	} else if (line.find("Bonds") != string::npos && !bondOK){
-	  bondOK = readBond(reader, numOfBonds, beadIndexMap);
+      // Read bonds
+    } else if (line.find("Bonds") != string::npos && !bondOK){
+      bondOK = readBond(reader, numOfBonds, beadIndexMap);
 
-	  // Read angles
-	} else if (line.find("Angles") != string::npos && !angleOK){
-	  angleOK = readAngle(reader, numOfAngles, beadIndexMap);
-	}
+      // Read angles
+    } else if (line.find("Angles") != string::npos && !angleOK){
+      angleOK = readAngle(reader, numOfAngles, beadIndexMap);
+    }
   }
 
   if (!positionOK || !velocityOK || !bondOK || !angleOK){
-	reader.close();
-	cout << "Problem with reading position, "
-		 << "velocity, bond, or angle data" << endl;
-	return false;
+    reader.close();
+    cout << "Problem with reading position, "
+	 << "velocity, bond, or angle data" << endl;
+    return false;
   }
   
   // Read the mapping file
   if (mapFile.compare("") != 0){
 
-	cout << "Reading mapping file" << endl;
+    cout << "Reading mapping file" << endl;
 
-	ifstream mapReader;
-	mapReader.open(mapFile);
-	readInputMap(mapReader, beadIndexMap);
-	mapReader.close();
+    ifstream mapReader;
+    mapReader.open(mapFile);
+    readInputMap(mapReader, beadIndexMap);
+    mapReader.close();
 
   }
 
   // Add remaining beads to container
   for (auto const& b : beadIndexMap){
-	beads[b.first] = b.second;
+    beads[b.first] = b.second;
   }
   
   reader.close();
@@ -232,7 +258,7 @@ bool LAMMPS::importData(string inFile, string mapFile){
 }
 
 bool LAMMPS::readHeader(ifstream& reader, int& numOfBeads,
-						int& numOfBonds, int& numOfAngles){
+			int& numOfBonds, int& numOfAngles){
 
   cout << "Reading simulation info ..." << endl;
 
@@ -247,32 +273,32 @@ bool LAMMPS::readHeader(ifstream& reader, int& numOfBeads,
   istringstream ss;
   
   while (!readNumOfBeads || !readTypesOfBeads ||
-		 !readNumOfBonds || !readTypesOfBonds ||
-		 !readNumOfAngles || !readTypesOfAngles){
-	if (reader.eof()) return false;
-	getline(reader, line);
-	ss.clear();
-	ss.str(line);
-	
-	if (line.find("atoms") != string::npos){
-	  ss >> numOfBeads;
-	  readNumOfBeads = true;
-	} else if (line.find("atom types") != string::npos){
-	  ss >> typesOfBeads;
-	  readTypesOfBeads = true;
-	} else if (line.find("bonds") != string::npos){
-	  ss >> numOfBonds;
-	  readNumOfBonds = true;
-	} else if (line.find("bond types") != string::npos){
-	  ss >> typesOfBonds;
-	  readTypesOfBonds = true;
-	} else if (line.find("angles") != string::npos){
-	  ss >> numOfAngles;
-	  readNumOfAngles = true;
-	} else if (line.find("angle types") != string::npos){
-	  ss >> typesOfAngles;
-	  readTypesOfAngles = true;
-	}
+	 !readNumOfBonds || !readTypesOfBonds ||
+	 !readNumOfAngles || !readTypesOfAngles){
+    if (reader.eof()) return false;
+    getline(reader, line);
+    ss.clear();
+    ss.str(line);
+    
+    if (line.find("atoms") != string::npos){
+      ss >> numOfBeads;
+      readNumOfBeads = true;
+    } else if (line.find("atom types") != string::npos){
+      ss >> typesOfBeads;
+      readTypesOfBeads = true;
+    } else if (line.find("bonds") != string::npos){
+      ss >> numOfBonds;
+      readNumOfBonds = true;
+    } else if (line.find("bond types") != string::npos){
+      ss >> typesOfBonds;
+      readTypesOfBonds = true;
+    } else if (line.find("angles") != string::npos){
+      ss >> numOfAngles;
+      readNumOfAngles = true;
+    } else if (line.find("angle types") != string::npos){
+      ss >> typesOfAngles;
+      readTypesOfAngles = true;
+    }
   }
 
   cout << numOfBeads << " atoms" << endl;
@@ -300,25 +326,25 @@ bool LAMMPS::readBoxSize(ifstream& reader){
   if (reader.eof()) return false;
   
   while (!readLx || !readLy || !readLz){
-	getline(reader, line);
-	ss.clear();
-	ss.str(line);
+    getline(reader, line);
+    ss.clear();
+    ss.str(line);
 
-	if (line.find("xlo xhi") != string::npos){
-	  ss >> lleft >> lright;
-	  lx = lright - lleft;
-	  readLx = true;
-	} else if (line.find("ylo yhi") != string::npos){
-	  ss >> lleft >> lright;
-	  ly = lright - lleft;
-	  readLy = true;
-	} else if (line.find("zlo zhi") != string::npos){
-	  ss >> lleft >> lright;
-	  lz = lright - lleft;
-	  readLz = true;
-	}
+    if (line.find("xlo xhi") != string::npos){
+      ss >> lleft >> lright;
+      lx = lright - lleft;
+      readLx = true;
+    } else if (line.find("ylo yhi") != string::npos){
+      ss >> lleft >> lright;
+      ly = lright - lleft;
+      readLy = true;
+    } else if (line.find("zlo zhi") != string::npos){
+      ss >> lleft >> lright;
+      lz = lright - lleft;
+      readLz = true;
+    }
 
-	if (reader.eof()) return false;
+    if (reader.eof()) return false;
   }
   
   cout << "Lx = " << lx << endl;
@@ -329,7 +355,7 @@ bool LAMMPS::readBoxSize(ifstream& reader){
 }
 
 bool LAMMPS::readPosition(ifstream& reader, int& numOfBeads, 
-						  map< int, shared_ptr<Bead> >& beadIndexMap){
+			  map< int, shared_ptr<Bead> >& beadIndexMap){
   int count {}, index {}, label {}, type {};
   double x {}, y {}, z {};
   int nx {}, ny {}, nz {};
@@ -340,32 +366,32 @@ bool LAMMPS::readPosition(ifstream& reader, int& numOfBeads,
   cout << "Reading atoms' positions ..." << endl;
   
   while (count < numOfBeads && !reader.eof()){
-	getline(reader, line);
-	if (line.length() > 0 && line[0] != '#'){
-	  ss.clear();
-	  ss.str(line);
-	  ss >> index >> label >> type >> x >> y >> z >> nx >> ny >> nz;
-	  bead = beadIndexMap[index];
-	  bead->setLabel(label);
-	  bead->setType(type);
-	  bead->setPosition(0, x);
-	  bead->setPosition(1, y);
-	  bead->setPosition(2, z);
-	  bead->setBoundaryCount(0, nx);
-	  bead->setBoundaryCount(1, ny);
-	  bead->setBoundaryCount(2, nz);		  
-	  count++;
-	}
+    getline(reader, line);
+    if (line.length() > 0 && line[0] != '#'){
+      ss.clear();
+      ss.str(line);
+      ss >> index >> label >> type >> x >> y >> z >> nx >> ny >> nz;
+      bead = beadIndexMap[index];
+      bead->setLabel(label);
+      bead->setType(type);
+      bead->setPosition(0, x);
+      bead->setPosition(1, y);
+      bead->setPosition(2, z);
+      bead->setBoundaryCount(0, nx);
+      bead->setBoundaryCount(1, ny);
+      bead->setBoundaryCount(2, nz);		  
+      count++;
+    }
   }
 
   if (count == numOfBeads){
-	return true;
+    return true;
   }
   return false;
 }
 
 bool LAMMPS::readVelocity(ifstream& reader, int& numOfBeads,
-						  map< int, shared_ptr<Bead> >& beadIndexMap){
+			  map< int, shared_ptr<Bead> >& beadIndexMap){
   int count {}, index {};
   double vx {}, vy {}, vz {};
   shared_ptr<Bead> bead {};
@@ -375,27 +401,27 @@ bool LAMMPS::readVelocity(ifstream& reader, int& numOfBeads,
   cout << "Reading atoms' velocities ..." << endl;
   
   while (count < numOfBeads && !reader.eof()){
-	getline(reader, line);
-	if (line.length() > 0 && line[0] != '#'){
-	  ss.clear();
-	  ss.str(line);
-	  ss >> index >> vx >> vy >> vz;
-	  bead = beadIndexMap[index];
-	  bead->setVelocity(0, vx);
-	  bead->setVelocity(1, vy);
-	  bead->setVelocity(2, vz);
-	  count++;
-	}
+    getline(reader, line);
+    if (line.length() > 0 && line[0] != '#'){
+      ss.clear();
+      ss.str(line);
+      ss >> index >> vx >> vy >> vz;
+      bead = beadIndexMap[index];
+      bead->setVelocity(0, vx);
+      bead->setVelocity(1, vy);
+      bead->setVelocity(2, vz);
+      count++;
+    }
   }
   
   if (count == numOfBeads){
-	return true;
+    return true;
   }
   return false;
 }
 
 bool LAMMPS::readBond(ifstream& reader, int& numOfBonds,
-					  map< int, shared_ptr<Bead> >& beadIndexMap){
+		      map< int, shared_ptr<Bead> >& beadIndexMap){
   int count {}, index {}, type {};
   int bead1Index {}, bead2Index {};
   shared_ptr<Bead> bead1 {}, bead2 {};
@@ -405,26 +431,26 @@ bool LAMMPS::readBond(ifstream& reader, int& numOfBonds,
   cout << "Reading bonds ..." << endl;
   
   while (count < numOfBonds && !reader.eof()){
-	getline(reader, line);
-	if (line.length() > 0 && line[0] != '#'){
-	  ss.clear();
-	  ss.str(line);
-	  ss >> index >> type >> bead1Index >> bead2Index;
-	  bead1 = beadIndexMap[bead1Index];
-	  bead2 = beadIndexMap[bead2Index];
-	  bead1->addBondWith(type, bead2);
-	  count++;
-	}
+    getline(reader, line);
+    if (line.length() > 0 && line[0] != '#'){
+      ss.clear();
+      ss.str(line);
+      ss >> index >> type >> bead1Index >> bead2Index;
+      bead1 = beadIndexMap[bead1Index];
+      bead2 = beadIndexMap[bead2Index];
+      bead1->addBondWith(type, bead2);
+      count++;
+    }
   }
   
   if (count == numOfBonds){
-	return true;
+    return true;
   }
   return false;
 }
 
 bool LAMMPS::readAngle(ifstream& reader, int& numOfAngles,
-					   map< int, shared_ptr<Bead> >& beadIndexMap){
+		       map< int, shared_ptr<Bead> >& beadIndexMap){
   int count {}, index {}, type {};
   int bead1Index {}, bead2Index {}, bead3Index {};
   shared_ptr<Bead> bead1 {}, bead2 {}, bead3 {};
@@ -434,27 +460,27 @@ bool LAMMPS::readAngle(ifstream& reader, int& numOfAngles,
   cout << "Reading angles ..." << endl;
   
   while (count < numOfAngles && !reader.eof()){
-	getline(reader, line);
-	if (line.length() > 0 && line[0] != '#'){
-	  ss.clear();
-	  ss.str(line);
-	  ss >> index >> type >> bead1Index >> bead2Index >> bead3Index;
-	  bead1 = beadIndexMap[bead1Index];
-	  bead2 = beadIndexMap[bead2Index];
-	  bead3 = beadIndexMap[bead3Index];
-	  bead1->addAngleWith(type, bead2, bead3);
-	  count++;
-	}
+    getline(reader, line);
+    if (line.length() > 0 && line[0] != '#'){
+      ss.clear();
+      ss.str(line);
+      ss >> index >> type >> bead1Index >> bead2Index >> bead3Index;
+      bead1 = beadIndexMap[bead1Index];
+      bead2 = beadIndexMap[bead2Index];
+      bead3 = beadIndexMap[bead3Index];
+      bead1->addAngleWith(type, bead2, bead3);
+      count++;
+    }
   }
   
   if (count == numOfAngles){
-	return true;
+    return true;
   }
   return false;
 }
 
 void LAMMPS::readInputMap(ifstream& reader, 
-						  map< int, shared_ptr<Bead> >& beadIndexMap){
+			  map< int, shared_ptr<Bead> >& beadIndexMap){
   istringstream ss;
   string line {};
   
@@ -465,36 +491,37 @@ void LAMMPS::readInputMap(ifstream& reader,
   shared_ptr<Polymer> polymer {};
   
   while (!reader.eof()){
-	getline(reader, line);
-	ss.clear();
-	ss.str(line);
+    getline(reader, line);
+    ss.clear();
+    ss.str(line);
 	
-	if (line.length() > 0 && line[0] == '#'){
-	  if (line.
-		  compare("# Polymer mapping - polymer key, start bead, end bead")
-		  == 0){
-		readingPolymer = true;
-		readingBead = false;
-	  } else if (line.compare("# Bead mapping - bead key, bead index") == 0){
-		readingBead = true;
-		readingPolymer = false;
-	  }
-	} else if (line.length() > 0) {
-	  if (readingPolymer){
-		ss >> key >> startBead >> endBead;
-		size = endBead - startBead + 1;
-		polymer = make_shared<Polymer>(size, false);
-		for (int i {startBead}; i <= endBead; i++){
-		  polymer->addBead(beadIndexMap[i]);
-		  beadIndexMap.erase(i);
-		}
-		polymers[key] = polymer;
-	  } else if (readingBead){
-		ss >> key >> startBead;
-		beads[key] = beadIndexMap[startBead];
-		beadIndexMap.erase(startBead);
-	  }
+    if (line.length() > 0 && line[0] == '#'){
+      if (line.
+	  compare("# Polymer mapping - polymer key, start bead, end bead")
+	  == 0){
+	readingPolymer = true;
+	readingBead = false;
+      } else if (line.
+		 compare("# Bead mapping - bead key, bead index") == 0){
+	readingBead = true;
+	readingPolymer = false;
+      }
+    } else if (line.length() > 0) {
+      if (readingPolymer){
+	ss >> key >> startBead >> endBead;
+	size = endBead - startBead + 1;
+	polymer = make_shared<Polymer>(size, false);
+	for (int i {startBead}; i <= endBead; i++){
+	  polymer->addBead(beadIndexMap[i]);
+	  beadIndexMap.erase(i);
 	}
+	polymers[key] = polymer;
+      } else if (readingBead){
+	ss >> key >> startBead;
+	beads[key] = beadIndexMap[startBead];
+	beadIndexMap.erase(startBead);
+      }
+    }
   }
 }
 
@@ -503,9 +530,6 @@ bool LAMMPS::exportData(string outFile, string mapFile){
   int bondIndexCount {1};
   int angleIndexCount {1};
 
-  map< int, int > beadTypeMap {};
-  map< int, int > bondTypeMap {};
-  map< int, int > angleTypeMap {};
   map< shared_ptr<Bead>, int> beadIndexMap {};
   map< shared_ptr<Bead::Bond>, int> bondIndexMap {};
   map< shared_ptr<Bead::Angle>, int> angleIndexMap {};  
@@ -523,13 +547,17 @@ bool LAMMPS::exportData(string outFile, string mapFile){
   stringstream angleWriter;
 
   positionWriter << "\nAtoms\n" << endl;
-  positionWriter << std::defaultfloat;
+  positionWriter.unsetf(std::ios_base::floatfield);
+  // positionWriter << std::defaultfloat;
   velocityWriter << "\nVelocities\n" << endl;
-  velocityWriter << std::defaultfloat;
+  velocityWriter.unsetf(std::ios_base::floatfield);
+  // velocityWriter << std::defaultfloat;
   bondWriter << "\nBonds\n" << endl;
-  bondWriter << std::defaultfloat;
+  bondWriter.unsetf(std::ios_base::floatfield);
+  // bondWriter << std::defaultfloat;
   angleWriter << "\nAngles\n" << endl;
-  angleWriter << std::defaultfloat;
+  angleWriter.unsetf(std::ios_base::floatfield);
+  // angleWriter << std::defaultfloat;
 
   // Writer for the mapping between indices and polymers/beads
   ofstream mapWriter;
@@ -539,44 +567,46 @@ bool LAMMPS::exportData(string outFile, string mapFile){
 
   // Write positions and velocities
   for (auto const& p : polymers){
-	mapWriter << p.first << " " << beadIndexCount << " ";
+    mapWriter << p.first << " " << beadIndexCount << " ";
     for (auto const& b : p.second->getBeads()){
-	  beadTypeMap[b->getType()] = b->getType();
-	  writePositionAndVelocity(b, beadIndexMap, 
-							   positionWriter, velocityWriter, 
-							   beadIndexCount);
-	}
-	mapWriter << beadIndexCount-1 << endl;
+      writePositionAndVelocity(b, beadIndexMap, 
+			       positionWriter, velocityWriter, 
+			       beadIndexCount);
+    }
+    mapWriter << beadIndexCount-1 << endl;
   }
 
   mapWriter << endl;
   mapWriter << "# Bead mapping - bead key, bead index" << endl;
 
   for (auto const& b : beads){
-	mapWriter << b.first << " " << beadIndexCount << endl;
-	beadTypeMap[b->getType()] = b->getType();
-	writePositionAndVelocity(b.second, beadIndexMap, 
-							   positionWriter, velocityWriter, 
-							   beadIndexCount);
+    mapWriter << b.first << " " << beadIndexCount << endl;
+    writePositionAndVelocity(b.second, beadIndexMap, 
+			     positionWriter, velocityWriter, 
+			     beadIndexCount);
   }
-
+  
   // Write bonds and angles
   for (auto const& p : polymers){
-	for (auto const& b : p.second->getBeads()){
-	  writeBondAndAngle(b, beadIndexMap, bondIndexMap, angleIndexMap,
-						 bondWriter, angleWriter,
-						 bondIndexCount, angleIndexCount);
+    for (auto const& b : p.second->getBeads()){
+      writeBondAndAngle(b, beadIndexMap, bondIndexMap, angleIndexMap,
+			bondWriter, angleWriter,
+			bondIndexCount, angleIndexCount);
     }
   }
  
   for (auto const& b : beads){
-	writeBondAndAngle(b.second, beadIndexMap, bondIndexMap, angleIndexMap,
-						bondWriter, angleWriter,
-						bondIndexCount, angleIndexCount);
+    writeBondAndAngle(b.second, beadIndexMap, bondIndexMap, angleIndexMap,
+		      bondWriter, angleWriter,
+		      bondIndexCount, angleIndexCount);
   }
 
+  beadIndexCount--;
+  bondIndexCount--;
+  angleIndexCount--;
+
   writeHeader(headerWriter,
-			  beadIndexCount-1, bondIndexCount-1, angleIndexCount-1);
+	      beadIndexCount, bondIndexCount, angleIndexCount);
   
   headerWriter << endl;
   positionWriter << endl;
@@ -588,70 +618,70 @@ bool LAMMPS::exportData(string outFile, string mapFile){
   writer << positionWriter.str();
   writer << velocityWriter.str();
   if (bondIndexCount > 0)
-	writer << bondWriter.str();
+    writer << bondWriter.str();
   if (angleIndexCount > 0)
-	writer << angleWriter.str();
+    writer << angleWriter.str();
   
   writer.close();
-
+  
   cout << "Finish writing LAMMPS file" << endl;
-
+  
   return true;
 }
 
 void LAMMPS::writePositionAndVelocity(const shared_ptr<Bead>& bead,
-									  map< shared_ptr<Bead>, int>& beadIndexMap,
-									  stringstream& positionWriter,
-									  stringstream& velocityWriter,
-									  int& beadIndexCount){
+				      map< shared_ptr<Bead>, int>& beadIndexMap,
+				      stringstream& positionWriter,
+				      stringstream& velocityWriter,
+				      int& beadIndexCount){
   if (beadIndexMap.count(bead) == 0){
-	writePosition(positionWriter, bead, beadIndexCount);
-	writeVelocity(velocityWriter, bead, beadIndexCount);
-	beadIndexMap[bead] = beadIndexCount;
-	beadIndexCount++;
+    writePosition(positionWriter, bead, beadIndexCount);
+    writeVelocity(velocityWriter, bead, beadIndexCount);
+    beadIndexMap[bead] = beadIndexCount;
+    beadIndexCount++;
   }
 }
 
 void LAMMPS::writeBondAndAngle(const shared_ptr<Bead>& bead,
-							   map< shared_ptr<Bead>, int >& beadIndexMap,
-							   map< shared_ptr<Bead::Bond>, int >& bondIndexMap,
-							   map< shared_ptr<Bead::Angle>, int >& angleIndexMap,
-							   stringstream& bondWriter,
-							   stringstream& angleWriter,
-							   int& bondIndexCount, int& angleIndexCount){
+			       map< shared_ptr<Bead>, int >& beadIndexMap,
+			       map< shared_ptr<Bead::Bond>, int >& bondIndexMap,
+			       map< shared_ptr<Bead::Angle>, int >& angleIndexMap,
+			       stringstream& bondWriter,
+			       stringstream& angleWriter,
+			       int& bondIndexCount, int& angleIndexCount){
   vector< shared_ptr<Bead::Bond> > bondList = bead->getBonds();
   vector< shared_ptr<Bead::Angle> > angleList = bead->getAngles();
   
   for (auto const& bond : bondList){
-	if (bondIndexMap.count(bond) == 0){
-	  bondIndexMap[bond] = bondIndexCount;
-	  int type = bond->getType();
-	  int bead1Index = beadIndexMap[bond->getBead(0)];
-	  int bead2Index = beadIndexMap[bond->getBead(1)];
-	  writeBond(bondWriter, bondIndexCount, type, bead1Index, bead2Index);
-	  bondIndexCount++;
-	}
+    if (bondIndexMap.count(bond) == 0){
+      bondIndexMap[bond] = bondIndexCount;
+      int type = bond->getType();
+      int bead1Index = beadIndexMap[bond->getBead(0)];
+      int bead2Index = beadIndexMap[bond->getBead(1)];
+      writeBond(bondWriter, bondIndexCount, type, bead1Index, bead2Index);
+      bondIndexCount++;
+    }
   }
   
   for (auto const& angle : angleList){
-	if (angleIndexMap.count(angle) == 0){
-	  angleIndexMap[angle] = angleIndexCount;
-	  int type = angle->getType();
-	  int bead1Index = beadIndexMap[angle->getBead(0)];
-	  int bead2Index = beadIndexMap[angle->getBead(1)];
-	  int bead3Index = beadIndexMap[angle->getBead(2)];
-	  writeAngle(angleWriter, angleIndexCount, type, 
-				 bead1Index, bead2Index, bead3Index);
-	  angleIndexCount++;
-	}
+    if (angleIndexMap.count(angle) == 0){
+      angleIndexMap[angle] = angleIndexCount;
+      int type = angle->getType();
+      int bead1Index = beadIndexMap[angle->getBead(0)];
+      int bead2Index = beadIndexMap[angle->getBead(1)];
+      int bead3Index = beadIndexMap[angle->getBead(2)];
+      writeAngle(angleWriter, angleIndexCount, type, 
+		 bead1Index, bead2Index, bead3Index);
+      angleIndexCount++;
+    }
   }
 } 
 
-void LAMMPS::writeHeader(stringstream& writer, 
-						 int numOfBeads, int numOfBonds, int numOfAngles){
+void LAMMPS::writeHeader(stringstream& writer,
+			 int numOfBeads, int numOfBonds, int numOfAngles){
   string header {
     "LAMMPS data file from restart file: timestep = 0,\tprocs = 1"};
-
+  
   writer << header << endl;
   writer << endl;
   writer << numOfBeads << " atoms " << endl;
@@ -667,12 +697,13 @@ void LAMMPS::writeHeader(stringstream& writer,
   writer << -lz/2.0 << " " << (lz-lz/2.0) << " zlo zhi" << endl;
   
   writer << "\nMasses\n" << endl;
-  for (int i {1}; i <= typesOfBeads; i++)
+  for (int i {1}; i <= typesOfBeads; i++){
     writer << i << " " << 1 << endl;
+  }
 }
 
 void LAMMPS::writePosition(stringstream& writer,
-						   const shared_ptr<Bead>& bead, int beadIndex){
+			   const shared_ptr<Bead>& bead, int beadIndex){
   writer << beadIndex << " "
          << bead->getLabel() << " "
          << bead->getType() << " ";
@@ -680,24 +711,26 @@ void LAMMPS::writePosition(stringstream& writer,
   writer << setprecision(preci) << bead->getPosition(0) << " "
          << setprecision(preci) << bead->getPosition(1) << " "
          << setprecision(preci) << bead->getPosition(2) << " ";
-  writer << std::defaultfloat;
+  writer.unsetf(std::ios_base::floatfield);
+  // writer << std::defaultfloat;
   writer << bead->getBoundaryCount(0) << " "
          << bead->getBoundaryCount(1) << " "
          << bead->getBoundaryCount(2) << endl;
 }
 
 void LAMMPS::writeVelocity(stringstream& writer,
-						   const shared_ptr<Bead>& bead, int beadIndex){
+			   const shared_ptr<Bead>& bead, int beadIndex){
   writer << beadIndex << " ";
   writer << std::scientific;
   writer << setprecision(preci) << bead->getVelocity(0) << " "
          << setprecision(preci) << bead->getVelocity(1) << " "
          << setprecision(preci) << bead->getVelocity(2) << endl;
-  writer << std::defaultfloat;
+  writer.unsetf(std::ios_base::floatfield);
+  // writer << std::defaultfloat;
 }
 
 void LAMMPS::writeBond(stringstream& writer, int bondIndex, int bondType,
-					   int bead1Index, int bead2Index){
+		       int bead1Index, int bead2Index){
   writer << bondIndex << " "
          << bondType << " "
          << bead1Index << " "
@@ -705,7 +738,7 @@ void LAMMPS::writeBond(stringstream& writer, int bondIndex, int bondType,
 }
 
 void LAMMPS::writeAngle(stringstream& writer, int angleIndex, int angleType,
-						int bead1Index, int bead2Index, int bead3Index){
+			int bead1Index, int bead2Index, int bead3Index){
   writer << angleIndex << " "
          << angleType  << " "
          << bead1Index << " "
@@ -713,21 +746,31 @@ void LAMMPS::writeAngle(stringstream& writer, int angleIndex, int angleType,
          << bead3Index << endl;
 }
 
-shared_ptr<Polymer> LAMMPS::createPolymer(int id, int numOfBeads){
-  shared_ptr<Polymer> polymer = make_shared<Polymer>(numOfBeads);
+shared_ptr<Polymer> LAMMPS::createPolymer(int id, int numOfBeads,
+					  int beadType, int bondType,
+					  int angleType){
+  removePolymer(id);
+  shared_ptr<Polymer> polymer = make_shared<Polymer>(numOfBeads, beadType,
+						     bondType, angleType);
   addPolymer(id, polymer);
   return polymer;
 }
 
-shared_ptr<Polymer> LAMMPS::createRandomWalkPolymer(int id, int numOfBeads){
+shared_ptr<Polymer> LAMMPS::createRandomWalkPolymer(int id, int numOfBeads,
+						    double x0, double y0, 
+						    double z0, double rx,
+						    double ry, double rz){
+  removePolymer(id);
   shared_ptr<Polymer> polymer = 
-	Polymer::createRandomWalkPolymer(numOfBeads, lx, ly, lz);
+    Polymer::createRandomWalkPolymer(numOfBeads, x0, y0, z0, rx, ry, rz);
   addPolymer(id, polymer);
   return polymer;
 }
 
-shared_ptr<Bead> LAMMPS::createBead(int id){
+shared_ptr<Bead> LAMMPS::createBead(int id, int beadType){
+  removeBead(id);
   shared_ptr<Bead> bead = make_shared<Bead>();
+  bead->setType(beadType);
   addBead(id, bead);
   return bead;
 }

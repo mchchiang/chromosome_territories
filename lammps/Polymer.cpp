@@ -15,34 +15,48 @@ using std::shared_ptr;
 using std::make_shared;
 
 // Constructors
-Polymer::Polymer(int nBeads, bool createBead){
+Polymer::Polymer(int nBeads, int beadType, 
+		 int bondType, int angleType, bool createBead){
 
-  beads.reserve(nBeads);
+  if (nBeads > 0){
+    beads.reserve(nBeads);
 
-  if (createBead){
-	int i {};
-	int type {};
+    if (createBead){
+
+      int i {};
+      shared_ptr<Bead> bead {};
+
+      bead = make_shared<Bead>();
+      bead->setType(beadType);
+      beads.push_back(bead);
+      i++;
 	
-	beads.push_back( make_shared<Bead>());
+      if (i < nBeads){
+	bead = make_shared<Bead>();
+	bead->setType(beadType);
+	beads.push_back(bead);
+	beads[i-1]->addBondWith(beadType, beads[i]);
 	i++;
+      }
 	
-	if (i < nBeads){
-	  beads.push_back(make_shared<Bead>());
-	  beads[i-1]->addBondWith(type, beads[i]);
-	  i++;
-	}
-	
-	for (; i < nBeads; i++){
-	  beads.push_back(make_shared<Bead>());
-	  beads[i-1]->addBondWith(type, beads[i]);
-	  beads[i-2]->addAngleWith(type, beads[i-1], beads[i]);
-	}
+      for (; i < nBeads; i++){
+	bead = make_shared<Bead>();
+	bead->setType(beadType);
+	beads.push_back(bead);
+	beads[i-1]->addBondWith(bondType, beads[i]);
+	beads[i-2]->addAngleWith(angleType, beads[i-1], beads[i]);
+      }
+    }
   }
 }
 
-Polymer::Polymer(int nBeads) : Polymer {nBeads, true} {}
-
 Polymer::Polymer() : Polymer {0, false} {} 
+Polymer::Polymer(int nBeads) : Polymer {nBeads, true} {}
+Polymer::Polymer(int nBeads, bool createBead) : 
+  Polymer {nBeads, 1, 1, 1, createBead} {}
+Polymer::Polymer(int nBeads, int beadType) : 
+  Polymer {nBeads, beadType, 1, 1} {}
+
 
 // Accessor methods
 shared_ptr<Bead> Polymer::getBead(int id){
@@ -68,8 +82,8 @@ void Polymer::addBead(int id, shared_ptr<Bead> bead){
 
 void Polymer::removeBead(int id){
   // Find the bond and angle type with neighbouring bead
-  int bondType {};
-  int angleType {};
+  int bondType {1};
+  int angleType {1};
   shared_ptr<Bead::Bond> bond {}; 
   shared_ptr<Bead::Angle> angle {};
   int bead1Index {id+1};
@@ -104,8 +118,38 @@ void Polymer::removeAllBeads(){
   beads.clear();
 }
 
+// Statistics of polymer
+vector<double> Polymer::getCentreOfMass(double lx, double ly, double lz){
+  double x {}, y {}, z {};
+  for (auto const& b : beads){
+    x += (b->getPosition(0) + lx*b->getBoundaryCount(0));
+    y += (b->getPosition(1) + ly*b->getBoundaryCount(1));
+    z += (b->getPosition(2) + lz*b->getBoundaryCount(2));
+  }
+  double numOfBeads = beads.size();
+  x /= numOfBeads;
+  y /= numOfBeads;
+  z /= numOfBeads;
+  return {x, y, z};
+}
+
+double Polymer::getGyrationRadius(double lx, double ly, double lz){
+  vector<double> cm = getCentreOfMass(lx, ly, lz);
+  double dx {}, dy {}, dz {}, sum {};
+  for (auto const& b : beads){
+    dx = b->getPosition(0) + lx*b->getBoundaryCount(0) - cm[0];
+    dy = b->getPosition(1) + ly*b->getBoundaryCount(1) - cm[1];
+    dz = b->getPosition(2) + lz*b->getBoundaryCount(2) - cm[2];
+    sum += dx*dx+dy*dy+dz*dz;
+  }
+  sum /= beads.size();
+  sum = sqrt(sum);
+  return sum;
+}
+
 // Static factory methods for creating polymers
-shared_ptr<Polymer> Polymer::createRandomWalkPolymer(int nBeads,
+shared_ptr<Polymer> Polymer::createRandomWalkPolymer(int nBeads, double x0,
+						     double y0, double z0,
 						     double lx, double ly,
 						     double lz){
   // Initialise random number generator
@@ -118,9 +162,9 @@ shared_ptr<Polymer> Polymer::createRandomWalkPolymer(int nBeads,
 
   // Set the first bead to be centred at the origin
   previous = polymer->getBead(0);
-  for (int i {}; i < 3; i++){
-    previous->setPosition(i, 0.0);
-  }
+  previous->setPosition(0, x0);
+  previous->setPosition(1, y0);
+  previous->setPosition(2, z0);
 
   for (int i {1}; i < nBeads; i++){
     current = polymer->getBead(i);
@@ -133,7 +177,7 @@ shared_ptr<Polymer> Polymer::createRandomWalkPolymer(int nBeads,
       x = previous->getPosition(0) + sintheta * cos(phi);
       y = previous->getPosition(1) + sintheta * sin(phi);
       z = previous->getPosition(2) + costheta;
-    } while (fabs(x) > lx/2.0 || fabs(y) > ly/2.0 || fabs(z) > lz/2.0);
+    } while (fabs(x-x0) > lx/2.0 || fabs(y-y0) > ly/2.0 || fabs(z-z0) > lz/2.0);
     current->setPosition(0, x);
     current->setPosition(1, y);
     current->setPosition(2, z);

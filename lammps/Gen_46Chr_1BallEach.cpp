@@ -18,30 +18,38 @@
 
 using namespace std;
 
-int main(int argc, char * argv[])
-{
-  if (argc < 2)
-	{
-	  cout << "Not enough arguments! Generation aborted." << endl;
-	  return 1;
-	}
-  char * outFile {argv[1]};
+int main(int argc, char * argv[]){
+  if (argc < 3){
+    cout << "Not enough arguments! Generation aborted." << endl;
+    return 1;
+  }
+  char* chromoFile {argv[1]};
+  char* outFile {argv[2]};
 
-  const int haploidNum {23};
+  const int haploidNum {23}; // For human
   const int numOfFibres {haploidNum*2};
-  const long chromoLength [numOfFibres]
-     {249250621, 243199373, 198022430, 191154276, 180915260,
-	  171115067, 159138663, 146364022, 141213431, 135534747,
-	  135006516, 133851895, 115169878, 107349540, 102531392,
-	  90354753,  81195210,  78077248,  59128983,  63025520,
-	  48129895,  51304566,  155270560,
-	  249250621, 243199373, 198022430, 191154276, 180915260,
-	  171115067, 159138663, 146364022, 141213431, 135534747,
-	  135006516, 133851895, 115169878, 107349540, 102531392,
-	  90354753,  81195210,  78077248,  59128983,  63025520,
-	  48129895,  51304566,  155270560
-	  };
-  const int numOfBeads {1};
+  const int numOfBeads {1}; 
+
+  // Reading the number of base pairs in each chromosome
+  long chromoLength [numOfFibres];
+  string header {};
+  ifstream chromoReader;
+  chromoReader.open(chromoFile);
+
+  if (!chromoReader){
+    cout << "Unable to read chromo file \"" 
+	 << chromoFile << "\"\n"
+	 << "Aborting reading process" << endl;
+    return 1;
+  }
+
+  // Skip the header of the file
+  getline(chromoReader, header);
+  getline(chromoReader, header);
+
+  for (int i {}, j {}; i < numOfFibres; i++){
+    chromoReader >> j >> chromoLength[i];
+  }
 
   // Box size of simulation
   double lx {120};
@@ -60,14 +68,13 @@ int main(int argc, char * argv[])
   readLAM.open(readLAMFile);
 
   if (!readLAM){
-	cout << "Unable to read the LAM file \"" 
-		 << readLAMFile << "\"\n"
-		 << "Aborting reading process" << endl;
-	return 1;
+    cout << "Unable to read the LAM file \"" 
+	 << readLAMFile << "\"\n"
+	 << "Aborting reading process" << endl;
+    return 1;
   }
 
-  // Remove header line
-  string header;
+  // Skip the header line
   getline(readLAM, header); 
 
   const string chrPrefix {"chr"};
@@ -79,19 +86,19 @@ int main(int argc, char * argv[])
   int chromo {};
 
   while (!readLAM.eof()){
-	readLAM >> bin >> ch >> lamStart >> lamEnd;
-	ch.erase(0, chrPrefix.length());
+    readLAM >> bin >> ch >> lamStart >> lamEnd;
+    ch.erase(0, chrPrefix.length());
 	
-	if (ch != "" && ch != "Y"){ // Ignore chrY data - model female cell
-	  if (ch == "X")
-		chromo = haploidNum;
-	  else 
-		chromo = stoi(ch, nullptr, 10);
+    if (ch != "" && ch != "Y"){ // Ignore chrY data - model female cell
+      if (ch == "X")
+	chromo = haploidNum;
+      else 
+	chromo = stoi(ch, nullptr, 10);
 	  
-	  lamContent = (lamEnd - lamStart) / chromoLength[chromo-1];
-	  laminar[chromo-1] += lamContent;
-	  laminar[chromo+haploidNum-1] += lamContent;
-	}
+      lamContent = (lamEnd - lamStart) / chromoLength[chromo-1];
+      laminar[chromo-1] += lamContent;
+      laminar[chromo+haploidNum-1] += lamContent;
+    }
   }
 
   readLAM.close();
@@ -109,9 +116,9 @@ int main(int argc, char * argv[])
   int binNum {};
 
   for (int i {}; i < numOfFibres; i++){
-	binNum = static_cast<int>((laminar[i] - min) / binWidth + 1);
-	if (binNum < 0) binNum = 0;
-	colour[i] = binNum;
+    binNum = static_cast<int>((laminar[i] - min) / binWidth + 1);
+    if (binNum < 0) binNum = 0;
+    colour[i] = binNum;
   }
   
   // Output total laminar content for each chromosome
@@ -122,22 +129,24 @@ int main(int argc, char * argv[])
        << setw(15) << "Bin/Type"
        << endl;
   
-  for (int i {}; i < numOfFibres; i++)
-    {
-      cout << setw(15) << (i+1)
-		   << setw(15) << (chromoLength[i] / 1000000.0)
-		   << setw(15) << laminar[i]
-		   << setw(15) << colour[i]
-		   << endl;
-    }
+  for (int i {}; i < numOfFibres; i++){
+    cout << setw(15) << (i+1)
+	 << setw(15) << (chromoLength[i] / 1000000.0)
+	 << setw(15) << laminar[i]
+	 << setw(15) << colour[i]
+	 << endl;
+  }
   
   // Creating the polymer
   shared_ptr<LAMMPS> lammps = make_shared<LAMMPS>(lx, ly, lz);
-  
+  lammps->setTypesOfBeads(11);
+  lammps->setTypesOfBonds(0);
+  lammps->setTypesOfAngles(0);
+
   // Create all polymers 
   vector< shared_ptr<Polymer> > polymers(numOfFibres);
   for (int i {}; i < numOfFibres; i++){
-	polymers[i] = lammps->createPolymer(i, numOfBeads);
+    polymers[i] = lammps->createPolymer(i, numOfBeads, colour[i]);
   }
   
   // Generate each bead's position randomly within the laminar
@@ -152,20 +161,19 @@ int main(int argc, char * argv[])
   shared_ptr<Bead> bead {};
 
   for (int i {}; i < numOfFibres; i++){
-	u = static_cast<double>(rand())/static_cast<double>(RAND_MAX);
-	v = static_cast<double>(rand())/static_cast<double>(RAND_MAX);
-	w = static_cast<double>(rand())/static_cast<double>(RAND_MAX);
-	r = maxRadius * pow(u, 1.0/3.0);
-	theta = acos(1 - 2 * v);
-	phi = 2 * pi * w;
-	x = r * sin(theta) * cos(phi);
-	y = r * sin(theta) * sin(phi);
-	z = r * cos(theta);
-	bead = polymers[i]->getBead(0);
-	bead->setPosition(0, x);
-	bead->setPosition(1, y);
-	bead->setPosition(2, z);
-	bead->setType(colour[i]);
+    u = static_cast<double>(rand())/static_cast<double>(RAND_MAX);
+    v = static_cast<double>(rand())/static_cast<double>(RAND_MAX);
+    w = static_cast<double>(rand())/static_cast<double>(RAND_MAX);
+    r = maxRadius * pow(u, 1.0/3.0);
+    theta = acos(1 - 2 * v);
+    phi = 2 * pi * w;
+    x = r * sin(theta) * cos(phi);
+    y = r * sin(theta) * sin(phi);
+    z = r * cos(theta);
+    bead = polymers[i]->getBead(0);
+    bead->setPosition(0, x);
+    bead->setPosition(1, y);
+    bead->setPosition(2, z);
   }
 
   lammps->exportData(outFile, "LAMMPS_MAP.dat");
