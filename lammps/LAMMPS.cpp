@@ -503,6 +503,9 @@ bool LAMMPS::exportData(string outFile, string mapFile){
   int bondIndexCount {1};
   int angleIndexCount {1};
 
+  map< int, int > beadTypeMap {};
+  map< int, int > bondTypeMap {};
+  map< int, int > angleTypeMap {};
   map< shared_ptr<Bead>, int> beadIndexMap {};
   map< shared_ptr<Bead::Bond>, int> bondIndexMap {};
   map< shared_ptr<Bead::Angle>, int> angleIndexMap {};  
@@ -538,6 +541,7 @@ bool LAMMPS::exportData(string outFile, string mapFile){
   for (auto const& p : polymers){
 	mapWriter << p.first << " " << beadIndexCount << " ";
     for (auto const& b : p.second->getBeads()){
+	  beadTypeMap[b->getType()] = b->getType();
 	  writePositionAndVelocity(b, beadIndexMap, 
 							   positionWriter, velocityWriter, 
 							   beadIndexCount);
@@ -550,6 +554,7 @@ bool LAMMPS::exportData(string outFile, string mapFile){
 
   for (auto const& b : beads){
 	mapWriter << b.first << " " << beadIndexCount << endl;
+	beadTypeMap[b->getType()] = b->getType();
 	writePositionAndVelocity(b.second, beadIndexMap, 
 							   positionWriter, velocityWriter, 
 							   beadIndexCount);
