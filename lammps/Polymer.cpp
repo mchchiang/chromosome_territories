@@ -35,7 +35,7 @@ Polymer::Polymer(int nBeads, int beadType,
 	bead = make_shared<Bead>();
 	bead->setType(beadType);
 	beads.push_back(bead);
-	beads[i-1]->addBondWith(beadType, beads[i]);
+	beads[i-1]->addBondWith(bondType, beads[i]);
 	i++;
       }
 	
@@ -148,14 +148,14 @@ double Polymer::getGyrationRadius(double lx, double ly, double lz){
 }
 
 // Static factory methods for creating polymers
-shared_ptr<Polymer> Polymer::createRandomWalkPolymer(int nBeads, double x0,
-						     double y0, double z0,
-						     double lx, double ly,
-						     double lz){
+shared_ptr<Polymer> Polymer::createRandomWalkPolymer(int nBeads, int beadType,
+													 double x0, double y0, 
+													 double z0, double lx, 
+													 double ly, double lz){
   // Initialise random number generator
   srand(time(NULL));
   double pi {M_PI};
-  shared_ptr<Polymer> polymer = make_shared<Polymer>(nBeads);
+  shared_ptr<Polymer> polymer = make_shared<Polymer>(nBeads, beadType);
   double x, y, z, r, costheta, sintheta, phi;
   shared_ptr<Bead> previous {};
   shared_ptr<Bead> current {};
