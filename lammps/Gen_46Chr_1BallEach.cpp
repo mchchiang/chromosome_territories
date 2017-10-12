@@ -174,6 +174,7 @@ int main(int argc, char * argv[]){
     bead->setPosition(0, x);
     bead->setPosition(1, y);
     bead->setPosition(2, z);
+	bead->setLabel(i+1);
   }
 
   lammps->exportData(outFile, "LAMMPS_MAP.dat");

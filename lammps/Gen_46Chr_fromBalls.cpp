@@ -24,11 +24,11 @@ using std::make_shared;
 
 int getChromoNumber(string ch, const string& prefix, const int& haploidNum);
 bool getFracContent(const string& file, vector< vector<double> >& fracScore,
-					int haploidNum, int bpPerBead,
+					int haploidNum, double bpPerBead,
 					int headerLines, double thresholdScore, 
 					int chrCol, int startCol, int endCol, 
 					int scoreCol, int totalCol);
-int getBeadType(int fracOfProm, int fracOfLam, int fracOfPCG);
+int getBeadType(double fracOfProm, double fracOfLam, double fracOfPCG);
 
 int main(int argc, char * argv[]){
   // Read input arguments for data file names
@@ -150,10 +150,8 @@ int main(int argc, char * argv[]){
 	}
   }
 
-  // Change laminar bead type from 11 to 6
-  for (int i {47}; i < 5047; i++){
-	lammps->getBead(i)->setType(6);
-  }
+  // Remove all the laminar beads
+  lammps->removeAllBeads();
 
   // Write input file
   lammps->exportData(outFile, outMapFile);
@@ -173,7 +171,7 @@ int getChromoNumber(string ch, const string& prefix, const int& haploidNum){
 
 // Compute the fractional content for each data type
 bool getFracContent(const string& file, vector< vector<double> >& fracScore,
-					int haploidNum, int bpPerBead,
+					int haploidNum, double bpPerBead,
 					int headerLines, double thresholdScore, 
 					int chrCol, int startCol, int endCol, 
 					int scoreCol, int totalCol){
@@ -181,7 +179,7 @@ bool getFracContent(const string& file, vector< vector<double> >& fracScore,
   const string chrPrefix {"chr"};
   string token {};
   double score {}, fracContent {};
-  long start {}, end {}; 
+  long long start {}, end {}; 
   int chromo {}, startBead {}, endBead {};
 
   cout << "Reading \"" << file << "\" file ... " << endl;
@@ -222,29 +220,40 @@ bool getFracContent(const string& file, vector< vector<double> >& fracScore,
 	  startBead = start / bpPerBead;
 	  endBead = end / bpPerBead;
 	  
-	  // Set the fractional score for the start and end bead
-	  fracContent = static_cast<double>(start)/static_cast<double>(bpPerBead) 
-		- static_cast<double>(startBead);
-	  fracScore[chromo-1][startBead] += fracContent;
-	  fracScore[chromo+haploidNum-1][startBead] += fracContent;
-	  
-	  fracContent = static_cast<double>(end)/static_cast<double>(bpPerBead) 
-		- static_cast<double>(startBead);
-	  fracScore[chromo-1][endBead] += fracContent;
-	  fracScore[chromo+haploidNum-1][endBead] += fracContent;
+	  // For content contained within the same bead
+	  if (startBead == endBead){
+		fracContent = static_cast<double>(end-start)/bpPerBead;
+		fracScore[chromo-1][startBead] += fracContent;
+		fracScore[chromo+haploidNum-1][startBead] += fracContent;
 
-	  // Other beads in betweeen are completely coded by the content
-	  for (int i {startBead+1}; i < endBead; i++){
-		fracScore[chromo-1][i] = 1.0;
-		fracScore[chromo+haploidNum-1][i] = 1.0;
+		// For content spread over multiple beads
+	  } else {
+		// Start bead content
+		fracContent = 1.0-(static_cast<double>(start)/bpPerBead
+						 - static_cast<double>(startBead));
+		fracScore[chromo-1][startBead] += fracContent;
+		fracScore[chromo+haploidNum-1][startBead] += fracContent;
+
+		// End bead content
+		fracContent = static_cast<double>(end)/bpPerBead
+		  - static_cast<double>(endBead);
+		fracScore[chromo-1][endBead] += fracContent;
+		fracScore[chromo+haploidNum-1][endBead] += fracContent;
+		
+		// Other beads in betweeen are completely coded by the content
+		for (int i {startBead+1}; i < endBead; i++){
+		  fracScore[chromo-1][i] = 1.0;
+		  fracScore[chromo+haploidNum-1][i] = 1.0;
+		}
 	  }
 	}
   }
+  reader.close();
   return true;
 }
 
 // Determine the type/colour of each bead
-int getBeadType(int fracOfProm, int fracOfLam, int fracOfPCG){
+int getBeadType(double fracOfProm, double fracOfLam, double fracOfPCG){
   bool hasProm {fracOfProm > 0.0};
   bool hasLam {fracOfLam > 0.0};
   bool hasPCG {fracOfPCG > 0.0};
