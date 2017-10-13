@@ -12,9 +12,9 @@
 #include <string>
 #include <memory>
 #include <cmath>
-#include "LAMMPS.h"
-#include "Polymer.h"
-#include "Bead.h"
+#include "../lammps/LAMMPS.h"
+#include "../lammps/Polymer.h"
+#include "../lammps/Bead.h"
 
 using namespace std;
 
@@ -65,18 +65,18 @@ int main(int argc, char * argv[]){
   // Reading laminar file
   cout << "Reading laminar file " << endl;
 
-  ifstream readLAM;
-  readLAM.open(lamFile);
+  ifstream lamReader;
+  lamReader.open(lamFile);
   
-  if (!readLAM){
+  if (!lamReader){
     cout << "Unable to read the LAM file \"" 
-	 << readLAMFile << "\"\n"
+	 << lamFile << "\"\n"
 	 << "Aborting reading process" << endl;
     return 1;
   }
 
   // Skip the header line
-  getline(readLAM, header); 
+  getline(lamReader, header); 
 
   const string chrPrefix {"chr"};
   double lamStart {};
@@ -86,8 +86,8 @@ int main(int argc, char * argv[]){
   int bin {};
   int chromo {};
 
-  while (!readLAM.eof()){
-    readLAM >> bin >> ch >> lamStart >> lamEnd;
+  while (!lamReader.eof()){
+    lamReader >> bin >> ch >> lamStart >> lamEnd;
     ch.erase(0, chrPrefix.length());
 	
     if (ch != "" && ch != "Y"){ // Ignore chrY data - model female cell
@@ -102,7 +102,7 @@ int main(int argc, char * argv[]){
     }
   }
 
-  readLAM.close();
+  lamReader.close();
 
   cout << "Finish reading laminar file" << endl;
 

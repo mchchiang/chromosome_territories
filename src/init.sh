@@ -74,7 +74,7 @@ prep2_outfile="prep2_${sim_name}.lammpstrj"
 run_outfile="run_${sim_name}.lammpstrj"
 pos_file="pos_${sim_name}.dat"
 sample_file="sample_${sim_name}"
-map_file="map_${sim_name}.dat"
+map_file="run_${sim_name}.lammpsmap"
 
 # Convert all time values to simulation time (i.e. rescale by delta t)
 restart_freq=$(bc <<< "$restart_freq/$delta_t")
