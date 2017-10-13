@@ -40,3 +40,6 @@
 
 # Ignore sandbox
 **/sandbox/*
+
+# Ignore executable folder
+**/exe/*
