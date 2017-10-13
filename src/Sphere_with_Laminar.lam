@@ -167,7 +167,7 @@ fix 1 mobil nve
 fix 2 mobil langevin 5.0 1.0 1.0 RUN_SEED
 run RUN_TIME
 
-write_data SAMPLE_FILE_${loopindex}.dat
+write_data SAMPLE_FILE_${loopindex}.dat nocoeff
 
 ##################################################
 
