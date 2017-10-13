@@ -6,7 +6,9 @@
 run=$1            # trial number
 run_dir=$2        # run directory
 
-gen_sphere_exe="./Gen_46Chr_1BallEach"
+gen_sphere_exe="../exe/Gen_46Chr_1BallEach"
+chromo_file="../data/chromo_length.dat"
+lam_file="../data/LAD.Pk.genome.full.dat"
 
 box_size=200
 lo=$(bc <<< "-$box_size/2.0")
@@ -72,6 +74,7 @@ prep2_outfile="prep2_${sim_name}.lammpstrj"
 run_outfile="run_${sim_name}.lammpstrj"
 pos_file="pos_${sim_name}.dat"
 sample_file="sample_${sim_name}"
+map_file="map_${sim_name}.dat"
 
 # Convert all time values to simulation time (i.e. rescale by delta t)
 restart_freq=$(bc <<< "$restart_freq/$delta_t")
@@ -144,4 +147,4 @@ sed -i -- "s/SOFT_CUTOFF/${soft_cutoff}/g" $file
 
 # Generate spheres
 
-${gen_sphere_exe} "${run_dir}/${init_file}"
+${gen_sphere_exe} $chromo_file $lam_file "${run_dir}/${init_file}" "${run_dir}/${map_file}"
