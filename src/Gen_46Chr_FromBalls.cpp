@@ -13,6 +13,7 @@
 #include "../lammps/LAMMPS.h"
 #include "../lammps/Polymer.h"
 #include "../lammps/Bead.h"
+#include "../lammps/DataManager.h"
 
 using std::cout;
 using std::cin;
@@ -22,26 +23,23 @@ using std::string;
 using std::shared_ptr;
 using std::make_shared;
 
-int getChromoNumber(string ch, const string& prefix, const int& haploidNum);
-bool getFracContent(const string& file, vector< vector<double> >& fracScore,
-					int haploidNum, double bpPerBead,
-					int headerLines, double thresholdScore, 
-					int chrCol, int startCol, int endCol, 
-					int scoreCol, int totalCol);
 int getBeadType(double fracOfProm, double fracOfLam, double fracOfPCG);
 
 int main(int argc, char * argv[]){
   // Read input arguments for data file names
-  if (argc < 5){
+  if (argc < 9){
     cout << "Not enough arguments! Generation aborted." << endl;
     return 1;
   }
   
-  char* chromoFile {argv[1]};
-  char* inFile {argv[2]};
-  char* inMapFile {argv[3]};
-  char* outFile {argv[4]};
-  char* outMapFile {argv[5]};
+  string chromoFile(argv[1]);
+  string promFile (argv[2]);
+  string lamFile (argv[3]);
+  string pcgFile (argv[4]);
+  string inFile (argv[5]);
+  string inMapFile (argv[6]);
+  string outFile (argv[7]);
+  string outMapFile (argv[8]);
 
   const int haploidNum {23}; // For human
   const int numOfFibres {haploidNum*2};
@@ -79,32 +77,26 @@ int main(int argc, char * argv[]){
   vector< vector<double> > fracOfLam {};
   vector< vector<double> > fracOfPCG {};
   for (int i {}; i < numOfFibres; i++){
-	vector<double> vec (fibreLength[i], 0.0);
-	fracOfProm.push_back(vec);
-	fracOfLam.push_back(vec);
-	fracOfPCG.push_back(vec);
+    vector<double> vec (fibreLength[i], 0.0);
+    fracOfProm.push_back(vec);
+    fracOfLam.push_back(vec);
+    fracOfPCG.push_back(vec);
   }
   
   // Read the bioinformatics files (promoter, laminar, PCG)
-  const string promFile {"H3K4me3.Pk.genome.full.dat"};
-  const string lamFile {"LAD.Pk.genome.full.dat"};
-  const string pcgFile {"PCG.genome.full.dat"};
-
+  DataManager dataMan {haploidNum, false, bpPerBead}; 
   bool readOK {false};
 
   // Read promoter file
-  readOK = getFracContent(promFile, fracOfProm, haploidNum, bpPerBead,
-						  1, 0, 1, 2, 3, 5, 10);
+  readOK = dataMan.getFracContent(promFile, fracOfProm, 1, 0, 1, 2, 3, 5, 10);
   if (!readOK) return 1;
   
   // Read laminar file
-  readOK = getFracContent(lamFile, fracOfLam, haploidNum, bpPerBead,
-						  1, -1, 1, 2, 3, -1, 4);
+  readOK = dataMan.getFracContent(lamFile, fracOfLam, 1, -1, 1, 2, 3, -1, 4);
   if (!readOK) return 1;
   
   // Read PCG file
-  readOK = getFracContent(pcgFile, fracOfPCG, haploidNum, bpPerBead,
-						  1, 15.0, 0, 1, 2, 3, 4);
+  readOK = dataMan.getFracContent(pcgFile, fracOfPCG, 1, 15.0, 0, 1, 2, 3, 4);
   if (!readOK) return 1;
   
   // Read the positions of the chromosome spheres
@@ -136,18 +128,18 @@ int main(int argc, char * argv[]){
   // starting from that position
   for (int i {}; i < numOfFibres; i++){
     bead = lammps->getPolymer(i)->getBead(0);
-	type = bead->getType();
+    type = bead->getType();
     x0 = bead->getPosition(0);
     y0 = bead->getPosition(1);
     z0 = bead->getPosition(2);
     polymer = lammps->createRandomWalkPolymer(i, fibreLength[i], type,
-									x0, y0, z0, lx, ly, lz);
-	for (int j {}; j < fibreLength[i]; j++){
-	  bead = polymer->getBead(j);
-	  bead->setLabel(i+1);
-	  bead->setType(getBeadType(fracOfProm[i][j], fracOfLam[i][j], 
-								fracOfPCG[i][j]));
-	}
+					      x0, y0, z0, lx, ly, lz);
+    for (int j {}; j < fibreLength[i]; j++){
+      bead = polymer->getBead(j);
+      bead->setLabel(i+1);
+      bead->setType(getBeadType(fracOfProm[i][j], fracOfLam[i][j], 
+				fracOfPCG[i][j]));
+    }
   }
 
   // Remove all the laminar beads
@@ -155,101 +147,6 @@ int main(int argc, char * argv[]){
 
   // Write input file
   lammps->exportData(outFile, outMapFile);
-}
-
-// Convert chromosome key into chromosome number
-int getChromoNumber(string ch, const string& prefix, const int& haploidNum){
-  ch.erase(0, prefix.length());
-  if (ch != "" && ch != "Y"){
-	if (ch == "X")
-	  return haploidNum;
-	else
-	  return stoi(ch, nullptr, 10);
-  }
-  return 0;
-}
-
-// Compute the fractional content for each data type
-bool getFracContent(const string& file, vector< vector<double> >& fracScore,
-					int haploidNum, double bpPerBead,
-					int headerLines, double thresholdScore, 
-					int chrCol, int startCol, int endCol, 
-					int scoreCol, int totalCol){
-
-  const string chrPrefix {"chr"};
-  string token {};
-  double score {}, fracContent {};
-  long long start {}, end {}; 
-  int chromo {}, startBead {}, endBead {};
-
-  cout << "Reading \"" << file << "\" file ... " << endl;
-  
-  ifstream reader;
-  reader.open(file);
-  if (!reader){
-	cout << "Unable to read the file. Aborting reading process ..." << endl;
-	return false;
-  }
-  
-  // Skip header line
-  for (int i {}; i < headerLines; i++)
-	getline(reader, token); 
-  
-  bool reachEOF {false};
-  while (!reader.eof()){
-	for (int col {}; col < totalCol; col++){
-	  if (!reader.eof()){
-		reader >> token;
-		if (col == chrCol)
-		  chromo = getChromoNumber(token, chrPrefix, haploidNum);
-		else if (col == startCol)
-		  start = stol(token, nullptr, 10);
-		else if (col == endCol)
-		  end = stol(token, nullptr, 10);
-		else if (col == scoreCol)
-		  score = stod(token, nullptr);
-	  } else {
-		reachEOF = true;
-		break;
-	  }
-	}
-
-	if (reachEOF) break;
-	
-	if (chromo > 0 && score > thresholdScore){
-	  startBead = start / bpPerBead;
-	  endBead = end / bpPerBead;
-	  
-	  // For content contained within the same bead
-	  if (startBead == endBead){
-		fracContent = static_cast<double>(end-start)/bpPerBead;
-		fracScore[chromo-1][startBead] += fracContent;
-		fracScore[chromo+haploidNum-1][startBead] += fracContent;
-
-		// For content spread over multiple beads
-	  } else {
-		// Start bead content
-		fracContent = 1.0-(static_cast<double>(start)/bpPerBead
-						 - static_cast<double>(startBead));
-		fracScore[chromo-1][startBead] += fracContent;
-		fracScore[chromo+haploidNum-1][startBead] += fracContent;
-
-		// End bead content
-		fracContent = static_cast<double>(end)/bpPerBead
-		  - static_cast<double>(endBead);
-		fracScore[chromo-1][endBead] += fracContent;
-		fracScore[chromo+haploidNum-1][endBead] += fracContent;
-		
-		// Other beads in betweeen are completely coded by the content
-		for (int i {startBead+1}; i < endBead; i++){
-		  fracScore[chromo-1][i] = 1.0;
-		  fracScore[chromo+haploidNum-1][i] = 1.0;
-		}
-	  }
-	}
-  }
-  reader.close();
-  return true;
 }
 
 // Determine the type/colour of each bead
