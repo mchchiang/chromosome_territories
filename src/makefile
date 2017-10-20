@@ -23,19 +23,21 @@ EDIR = ../exe
 #
 # Source files
 #
-SRC_NAME = Gen_46Chr_1BallEach.cpp
-#SRC_NAME = Gen_46Chr_fromBalls.cpp
+#SRC_NAME = Gen_46Chr_1BallEach.cpp
+#SRC_NAME = Gen_46Chr_FromBalls.cpp
+SRC_NAME = Gen_Chr_Het-LAD.cpp
 
 #
 # Library (LAMMPS) files
-LH_NAME = Bead.h Polymer.h LAMMPS.h
-LSRC_NAME = Bead.cpp Polymer.cpp LAMMPS.cpp
+LH_NAME = Bead.h Polymer.h LAMMPS.h DataManager.h
+LSRC_NAME = Bead.cpp Polymer.cpp LAMMPS.cpp DataManager.cpp
 
 #
 # Executable
 #
-EXE_NAME = Gen_46Chr_1BallEach
-#EXE_NAME = Gen_46Chr_fromBalls
+#EXE_NAME = Gen_46Chr_1BallEach
+#EXE_NAME = Gen_46Chr_FromBalls
+EXE_NAME = Gen_Chr_Het-LAD
 
 #
 # Set correct file directories for source, object and executable files
