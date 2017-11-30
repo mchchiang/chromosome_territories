@@ -1,4 +1,4 @@
-# Get_Radial_Distrb.py
+# GetRadialDistrb.py
 # Obtain the radial distribution of each chromosome ball
 
 import sys
