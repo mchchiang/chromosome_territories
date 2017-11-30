@@ -25,7 +25,7 @@ EDIR = ../exe
 #
 #SRC_NAME = Gen_46Chr_1BallEach.cpp
 #SRC_NAME = Gen_46Chr_FromBalls.cpp
-SRC_NAME = Gen_Chr_Het-LAD.cpp
+SRC_NAME = Gen_Chr_Het.cpp
 
 #
 # Library (LAMMPS) files
@@ -37,7 +37,7 @@ LSRC_NAME = Bead.cpp Polymer.cpp LAMMPS.cpp DataManager.cpp
 #
 #EXE_NAME = Gen_46Chr_1BallEach
 #EXE_NAME = Gen_46Chr_FromBalls
-EXE_NAME = Gen_Chr_Het-LAD
+EXE_NAME = Gen_Chr_Het
 
 #
 # Set correct file directories for source, object and executable files

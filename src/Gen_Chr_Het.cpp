@@ -1,4 +1,4 @@
-/* Gen_Chr_Het-LAD.cpp
+/* Gen_Chr_Het.cpp
  * This is a code that generaetes a chromosome with heterchromatin
  * (determined by the signal of H3K9me) and laminar contact (LaminB signal)
  * info encoded
@@ -101,7 +101,7 @@ int main(int argc, char * argv[]){
   shared_ptr<Polymer> polymer {};
   shared_ptr<Bead> bead {};
   
-  lammps->setTypesOfBeads(4);
+  lammps->setTypesOfBeads(3);
   lammps->setTypesOfBonds(1);
   lammps->setTypesOfAngles(1);
 
@@ -121,7 +121,7 @@ int main(int argc, char * argv[]){
 int getBeadType(double fracOfLam, double fracOfHet){
   const int neutral {1};
   const int lam {2};
-  const int het {3};
+  const int het {2};
 
   if (fracOfLam > 0.0 && fracOfHet > 0.0){
     if (fracOfHet > 2.0*fracOfLam){

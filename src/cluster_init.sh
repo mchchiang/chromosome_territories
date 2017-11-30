@@ -3,87 +3,101 @@
 # An input script for setting parameters in the LAMMPS config file
 
 # Read in and set parameters
-run=$1            # trial number
-run_dir=$2        # run directory
+e_hethet=$1       # HH interaction
+e_hetlam=$2       # HL interaction
+run=$3            # trial number
+run_dir=$4        # run directory
 
-gen_chromo_exe="../exe/Gen_Chr_Het-LAD"
+gen_chromo_exe="../exe/Gen_Chr_Het"
 chromo_file="../data/chromo_length.dat"
 lam_file="../data/LAD.Pk.genome.full.dat"
 het_file="../data/GM12878.H3K9me3.Pk.full.dat"
 chr_num=20
 
-box_size=50
-buffer=5
+init_box_size=100
+box_size=40
+buffer=6 
+
+# Initial box size
+ilo=$(bc <<< "-$init_box_size/2.0")
+ihi=$(bc <<< "$init_box_size/2.0")
+
+# Final box size
 lo=$(bc <<< "-$box_size/2.0")
 hi=$(bc <<< "$box_size/2.0")
 
 max_seed=100000
 
-restart_freq=100
+restart_freq=1000
 
-prep1_printfreq=10
+prep1_printfreq=1000
 prep1_seed=$(python GetRandom.py $max_seed)
-prep1_time=1000
+prep1_time_1=4000
+prep1_time_2=4000
+prep1_time_3=2000
 
-prep2_printfreq=10
+prep2_printfreq=1000
 prep2_seed=$(python GetRandom.py $max_seed)
-prep2_time=1000
+prep2_time=5000
+
+prep3_printfreq=1000
+prep3_seed=$(python GetRandom.py $max_seed)
+prep3_time=5000
 
 run_printfreq=1000
 run1_seed=$(python GetRandom.py $max_seed)
-run1_time=10000
-run2_seed=$(python GetRandom.py $max_seed)
-run2_time=250000
-run3_seed=$(python GetRandom.py $max_seed)
-run3_time=250000
+run1_time=200000
 
-lam_atoms=2000
+lam_atoms=2500
 lam_seed=$(python GetRandom.py $max_seed)
 
 delta_t=0.01       # time step size in Brownian time units
 
+# Wall type
+wall="bead"        # choose between "ljwall" (default) or "bead"
+
 # Interaction energy parameters
+# Harmonic potential
+e_harm=100.0
+
+# Soft potential
+e_soft=100.0
+
 # LJ potentials
 sigma=1.0
 cutoff=$(python -c "print '%.13f' % (1.8*$sigma)")
-e_hethet=1.0
-e_hetlam=1.0
-e_hetlad=1.0
-e_ladlad=1.0
-e_ladlam=2.0
+# See input arguments for HH and HL
 
 # Normalisation (ensure minimum of potential is actually epsilon)
 norm=$(python -c "print '%.13f' % (1.0 + 4.0*(($sigma/$cutoff)**12-($sigma/$cutoff)**6))")
 
 e_hethet_norm=$(python -c "print '%.13f' % ($e_hethet/$norm)")
 e_hetlam_norm=$(python -c "print '%.13f' % ($e_hetlam/$norm)")
-e_hetlad_norm=$(python -c "print '%.13f' % ($e_hetlad/$norm)")
-e_ladlad_norm=$(python -c "print '%.13f' % ($e_ladlad/$norm)")
-e_ladlam_norm=$(python -c "print '%.13f' % ($e_ladlam/$norm)")
 
 # Set output file names
-sim_name="Sene_NLAM_${lam_atoms}_run_${run}"
+sim_name="cluster_chr_${chr_num}_L_${box_size}_HH_${e_hethet}_HL_${e_hetlam}_run_${run}"
 init_file="init_${sim_name}.in"
 restart_file="restart_${sim_name}"
 prep1_outfile="prep1_${sim_name}.lammpstrj"
 prep2_outfile="prep2_${sim_name}.lammpstrj"
+prep3_outfile="prep3_${sim_name}.lammpstrj"
 run_outfile="run_${sim_name}.lammpstrj"
 pos_file="pos_${sim_name}.dat"
 map_file="${sim_name}.lammpsmap"
 equil_simfile="equil_${sim_name}.out"
-run1_simfile="preInterxn_${sim_name}.out"
-run2_simfile="postInterxn_${sim_name}.out"
-run3_simfile="end_${sim_name}.out"
+run1_simfile="end_${sim_name}.out"
 
 # Convert all time values to simulation time (i.e. rescale by delta t)
 restart_freq=$(bc <<< "$restart_freq/$delta_t")
-prep1_time=$(bc <<< "$prep1_time/$delta_t")
+prep1_time_1=$(bc <<< "$prep1_time_1/$delta_t")
+prep1_time_2=$(bc <<< "$prep1_time_2/$delta_t")
+prep1_time_3=$(bc <<< "$prep1_time_3/$delta_t")
 prep1_printfreq=$(bc <<< "$prep1_printfreq/$delta_t")
 prep2_time=$(bc <<< "$prep2_time/$delta_t")
 prep2_printfreq=$(bc <<< "$prep2_printfreq/$delta_t")
+prep3_time=$(bc <<< "$prep3_time/$delta_t")
+prep3_printfreq=$(bc <<< "$prep3_printfreq/$delta_t")
 run1_time=$(bc <<< "$run1_time/$delta_t")
-run2_time=$(bc <<< "$run2_time/$delta_t")
-run3_time=$(bc <<< "$run3_time/$delta_t")
 run_printfreq=$(bc <<< "$run_printfreq/$delta_t")
 
 # Make execution directory
@@ -93,11 +107,26 @@ mkdir $run_dir
 # Create the lammps command file based on template
 lammps_file="${sim_name}.lam"
 file="${run_dir}/${lammps_file}"
-cp Senescence.lam $file
+
+# Choose template depending on the type of wall used
+if [ $wall == "bead" ]; then
+    echo "Copying bead wall lammps script"
+    cp Cluster-bead.lam $file
+else
+    echo "Copying lj wall lammps script"
+    cp Cluster-ljwall.lam $file
+fi
 
 # Replace macros in template with input values
 sed -i -- "s/INIT_FILE/${init_file}/g" $file
 sed -i -- "s/RESTART_FILE/${restart_file}/g" $file
+
+sed -i -- "s/IXLO/${ilo}/g" $file
+sed -i -- "s/IXHI/${ihi}/g" $file
+sed -i -- "s/IYLO/${ilo}/g" $file
+sed -i -- "s/IYHI/${ihi}/g" $file
+sed -i -- "s/IZLO/${ilo}/g" $file
+sed -i -- "s/IZHI/${ihi}/g" $file
 
 sed -i -- "s/XLO/${lo}/g" $file
 sed -i -- "s/XHI/${hi}/g" $file
@@ -111,12 +140,19 @@ sed -i -- "s/RESTART_FREQ/${restart_freq}/g" $file
 sed -i -- "s/PREP1_PRINTFREQ/${prep1_printfreq}/g" $file
 sed -i -- "s/PREP1_OUTFILE/${prep1_outfile}/g" $file
 sed -i -- "s/PREP1_SEED/${prep1_seed}/g" $file
-sed -i -- "s/PREP1_TIME/${prep1_time}/g" $file
+sed -i -- "s/PREP1_TIME_1/${prep1_time_1}/g" $file
+sed -i -- "s/PREP1_TIME_2/${prep1_time_2}/g" $file
+sed -i -- "s/PREP1_TIME_3/${prep1_time_3}/g" $file
 
 sed -i -- "s/PREP2_PRINTFREQ/${prep2_printfreq}/g" $file
 sed -i -- "s/PREP2_OUTFILE/${prep2_outfile}/g" $file
 sed -i -- "s/PREP2_SEED/${prep2_seed}/g" $file
 sed -i -- "s/PREP2_TIME/${prep2_time}/g" $file
+
+sed -i -- "s/PREP3_PRINTFREQ/${prep3_printfreq}/g" $file
+sed -i -- "s/PREP3_OUTFILE/${prep3_outfile}/g" $file
+sed -i -- "s/PREP3_SEED/${prep3_seed}/g" $file
+sed -i -- "s/PREP3_TIME/${prep3_time}/g" $file
 
 sed -i -- "s/POS_FILE/${pos_file}/g" $file
 
@@ -126,32 +162,25 @@ sed -i -- "s/RUN_OUTFILE/${run_outfile}/g" $file
 sed -i -- "s/RUN1_SEED/${run1_seed}/g" $file
 sed -i -- "s/RUN1_TIME/${run1_time}/g" $file
 
-sed -i -- "s/RUN2_SEED/${run2_seed}/g" $file
-sed -i -- "s/RUN2_TIME/${run2_time}/g" $file
-
-sed -i -- "s/RUN3_SEED/${run3_seed}/g" $file
-sed -i -- "s/RUN3_TIME/${run3_time}/g" $file
-
 sed -i -- "s/LAM_ATOMS/${lam_atoms}/g" $file
 sed -i -- "s/LAM_SEED/${lam_seed}/g" $file
 
 sed -i -- "s/DELTA_T/${delta_t}/g" $file
 
-sed -i -- "s/SIGMA/${sigma}/g" $file
+sed -i -- "s/EHARM/${e_harm}/g" $file
+sed -i -- "s/ESOFT/${e_soft}/g" $file
 
 sed -i -- "s/EHETHET/${e_hethet_norm}/g" $file
 sed -i -- "s/EHETLAM/${e_hetlam_norm}/g" $file
-sed -i -- "s/EHETLAD/${e_hetlad_norm}/g" $file
-sed -i -- "s/ELADLAD/${e_ladlad_norm}/g" $file
-sed -i -- "s/ELADLAM/${e_ladlam_norm}/g" $file
+
+sed -i -- "s/SIGMA/${sigma}/g" $file
 
 sed -i -- "s/CUTOFF/${cutoff}/g" $file
 
 sed -i -- "s/EQUIL_SIMFILE/${equil_simfile}/g" $file
 sed -i -- "s/RUN1_SIMFILE/${run1_simfile}/g" $file
-sed -i -- "s/RUN2_SIMFILE/${run2_simfile}/g" $file
-sed -i -- "s/RUN3_SIMFILE/${run3_simfile}/g" $file
+
 
 # Generate chromatin
 
-${gen_chromo_exe} $chromo_file $lam_file $het_file $chr_num $box_size $box_size $box_size $buffer "${run_dir}/${init_file}" "${run_dir}/${map_file}"
+${gen_chromo_exe} $chromo_file $lam_file $het_file $chr_num $init_box_size $init_box_size $init_box_size $buffer "${run_dir}/${init_file}" "${run_dir}/${map_file}"
