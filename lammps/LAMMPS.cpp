@@ -757,14 +757,14 @@ shared_ptr<Polymer> LAMMPS::createPolymer(int id, int numOfBeads,
 }
 
 shared_ptr<Polymer> LAMMPS::createRandomWalkPolymer(int id, int numOfBeads,
-													int beadType,
-													double x0, double y0, 
-													double z0, double rx,
-													double ry, double rz){
+						    int beadType,
+						    double x0, double y0, 
+						    double z0, double rx,
+						    double ry, double rz){
   removePolymer(id);
   shared_ptr<Polymer> polymer = 
     Polymer::createRandomWalkPolymer(numOfBeads, beadType,
-									 x0, y0, z0, rx, ry, rz);
+				     x0, y0, z0, rx, ry, rz);
   addPolymer(id, polymer);
   return polymer;
 }

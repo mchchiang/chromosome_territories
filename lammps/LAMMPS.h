@@ -118,13 +118,13 @@ public:
   bool exportData(string outFile, string mapFile);
   
   shared_ptr<Polymer> createPolymer(int id, int numOfBeads,
-									int beadType = 1, 
-									int bondType = 1, 
-									int angleType = 1);
+				    int beadType = 1, 
+				    int bondType = 1, 
+				    int angleType = 1);
   shared_ptr<Polymer> createRandomWalkPolymer(int id, int numOfBeads,
-											  int beadType,
-											  double x0, double y0, double z0,
-											  double rx, double ry, double rz);
+					      int beadType,
+					      double x0, double y0, double z0,
+					      double rx, double ry, double rz);
   shared_ptr<Bead> createBead(int id, int beadType = 1);
 
 private:

@@ -149,9 +149,9 @@ double Polymer::getGyrationRadius(double lx, double ly, double lz){
 
 // Static factory methods for creating polymers
 shared_ptr<Polymer> Polymer::createRandomWalkPolymer(int nBeads, int beadType,
-													 double x0, double y0, 
-													 double z0, double lx, 
-													 double ly, double lz){
+						     double x0, double y0, 
+						     double z0, double lx, 
+						     double ly, double lz){
   // Initialise random number generator
   srand(time(NULL));
   double pi {M_PI};

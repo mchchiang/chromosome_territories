@@ -42,10 +42,10 @@ public:
   
   // Static factory methods
   static shared_ptr<Polymer> createRandomWalkPolymer(int numOfBeads, 
-													 int beadType,
-													 double x, double y,
-													 double z, double lx, 
-													 double ly, double lz);
+						     int beadType,
+						     double x, double y,
+						     double z, double lx, 
+						     double ly, double lz);
 
 };
 
