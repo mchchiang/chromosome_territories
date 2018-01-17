@@ -1,7 +1,7 @@
-/* Locality.cpp
+/* LoopProb.cpp
  *
- * A program that reads the lammpstrj file and produce a contact map
- * which shows the average contact between beads over time
+ * A program that reads the lammpstrj file and determine
+ * the looping probability
  *
  */
 
@@ -25,7 +25,7 @@ double distance(double x, double y, double z);
 
 int main(int argc, char* argv[]){
 
-  if (argc < 12){
+  if (argc < 11){
     cout << "Not enough arguments! Process aborted." << endl;
     return 1;
   }
@@ -35,12 +35,11 @@ int main(int argc, char* argv[]){
   int ly {stoi(string(argv[3]), nullptr, 10)};
   int lz {stoi(string(argv[4]), nullptr, 10)};
   double cutoff {stod(string(argv[5]), nullptr)};
-  int localDist {stoi(string(argv[6]), nullptr, 10)};
-  int startTime {stoi(string(argv[7]), nullptr, 10)};
-  int endTime {stoi(string(argv[8]), nullptr, 10)};
-  int timeInc {stoi(string(argv[9]), nullptr, 10)};
-  string posFile (argv[10]);
-  string outFile (argv[11]);
+  int startTime {stoi(string(argv[6]), nullptr, 10)};
+  int endTime {stoi(string(argv[7]), nullptr, 10)};
+  int timeInc {stoi(string(argv[8]), nullptr, 10)};
+  string posFile (argv[9]);
+  string outFile (argv[10]);
 
   const int dimension {3};
   const int headerLines {2};
@@ -48,8 +47,7 @@ int main(int argc, char* argv[]){
   vector<double> zeroVector (dimension,0.0);
   vector< vector<double> >* position = 
     new vector< vector<double> >(numOfBeads, zeroVector);
-  vector<int>* type = new vector<int>(numOfBeads, 0);
-
+  
   // Contact map matrix
   vector<double> row (numOfBeads, 0.0);
   vector< vector<double> >* contactMap = 
@@ -86,7 +84,6 @@ int main(int argc, char* argv[]){
 	position->at(i)[0] = x + ix*lx;
 	position->at(i)[1] = y + iy*ly;
 	position->at(i)[2] = z + iz*lz;
-	type->at(i) = t;
       }
       
       // Compute contact
@@ -124,27 +121,18 @@ int main(int argc, char* argv[]){
     }
   }
 
-  // Compute locality of contact
-  double local {}, distal {};
-  int localCount {}, distalCount {};
+  // Compute looping probability
+  vector<double>* prob {new vector<double>(numOfBeads, 0.0)};
   for (int i {}; i < numOfBeads; i++){
-    for (int j {}; j <= i; j++){
-      if (abs(i-j) <= localDist){ // Local contact
-	local += (*contactMap)[i][j];
-	localCount++;
-      } else { // Distal contact
-	distal += (*contactMap)[i][j];
-	distalCount++;
-      }
+    (*prob)[0] += (*contactMap)[i][i];
+    for (int j {}; j < i; j++){
+      (*prob)[i-j] += (*contactMap)[i][j];
     }
   }
   
-  /*  double totalContacts {(numOfBeads*numOfBeads+numOfBeads)/2.0};
-  local /= totalContacts;
-  distal /= totalContacts;*/
-  local /= static_cast<double>(localCount);
-  distal /= static_cast<double>(distalCount);
-  double ratio = (distal-local)/(distal+local);
+  for (int i {}; i < numOfBeads; i++){
+    (*prob)[i] /= (numOfBeads-i);
+  }
   
   ofstream writer;
   writer.open(outFile);
@@ -154,14 +142,16 @@ int main(int argc, char* argv[]){
   }
 
   writer << std::setprecision(10) << std::fixed;
-  writer << local << " " << distal << " " << ratio << endl;
+  for (int i {}; i < numOfBeads; i++){
+    writer << i+1 << " " << (*prob)[i] << endl;
+  }
 
   writer.close();
 
   // Delete resources
+  delete prob;
   delete position;
   delete contactMap;
-
 }
 
 double distance(double x, double y, double z){

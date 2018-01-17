@@ -23,8 +23,8 @@ N=6303
 L=40
 chr=20
 rc=5
-ld=300
-t_start=190000
+ld=200
+t_start=150000
 t_end=200000
 t_inc=1000
 

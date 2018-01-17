@@ -17,9 +17,9 @@ ehl=$(python -c "print '%.1f' % ($ehl_start)")
 
 cluster_exe="./Cluster"
 average_py="./GetAverage.py"
-num_avg_file="${dir}/boxwide-cluster-num_avg_rc_${rc}.dat"
+num_avg_file="${dir}/cluster-num_avg_z_17.0_rc_${rc}.dat"
 > $num_avg_file
-size_avg_file="${dir}/boxwide-cluster-size_avg_rc_${rc}.dat"
+size_avg_file="${dir}/cluster-size_avg_z_17.0_rc_${rc}.dat"
 > $size_avg_file
 
 L=40

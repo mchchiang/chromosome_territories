@@ -24,7 +24,7 @@ type_num=1
 types="2"
 
 select_mode="cubic"
-select_args="-20.0 20.0 -20.0 20.0 -20.0 20.0"
+select_args="-20.0 20.0 -20.0 20.0 17.0 20.0"
 L=40
 chr=20
 
