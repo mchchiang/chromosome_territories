@@ -1,8 +1,8 @@
 /* Locality.cpp
  *
- * A program that reads the lammpstrj file and produce a contact map
- * which shows the average contact between beads over time
- *
+ * A program that reads the position file and computes
+ * the locality of the chromosome based on the average
+ * number of contacts between beads
  */
 
 #include <iostream>
