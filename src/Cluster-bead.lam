@@ -363,9 +363,9 @@ fix bal all balance 100000 1.1 rcb
 compute gyr mobil gyration
 thermo RUN_PRINTFREQ
 thermo_style custom v_btime temp epair vol c_gyr
-dump 1 all custom RUN_PRINTFREQ RUN_OUTFILE id type x y z ix iy iz
-dump 2 all xyz RUN_PRINTFREQ POS_FILE
-dump_modify 2 element O N C append yes
+dump 1 mobil custom RUN_PRINTFREQ RUN_OUTFILE id type x y z ix iy iz
+#dump 2 all xyz RUN_PRINTFREQ POS_FILE
+#dump_modify 2 element O N C append yes
 
 ##################################################
 
