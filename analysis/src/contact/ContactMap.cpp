@@ -31,6 +31,6 @@ int main(int argc, char* argv[]){
 					   contactType,
 					   startTime, endTime, timeInc, 
 					   posFile);
-  map->reduceByBin(block, block);
+  map->reduceByBin(block);
   map->exportToFile(true, true, true, contactFile);
 }

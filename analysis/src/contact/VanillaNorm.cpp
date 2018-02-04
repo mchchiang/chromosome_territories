@@ -25,15 +25,14 @@ using std::istringstream;
 int main(int argc, char* argv[]){
 
   // Read in arguments
-  if (argc < 8){
+  if (argc < 7){
     cout << "Not enough arguments!" << endl; 
-    cout << "Usage ./VanillaNorm [nx] [ny] [full/upper] "
+    cout << "Usage ./VanillaNorm [size] [full/upper] "
 	 << " [dense/sparse] [space/nospace] [input] [output]" << endl;
     return 1;
   }
   int argi {};
-  int nx {stoi(string(argv[++argi]), nullptr, 10)};
-  int ny {stoi(string(argv[++argi]), nullptr, 10)};
+  int size {stoi(string(argv[++argi]), nullptr, 10)};
   string fullOrUpper (argv[++argi]);
   string denseOrSparse (argv[++argi]);
   string spaceOrNoSpace (argv[++argi]);
@@ -49,7 +48,7 @@ int main(int argc, char* argv[]){
   bool space = true;
   if (spaceOrNoSpace != "space") space = false;
 
-  CMap map = ContactMap::createFromMatrixFile(nx, ny, full, matrixFile);
+  CMap map = ContactMap::createFromMatrixFile(size, full, matrixFile);
   map->vanillaNorm();
   map->exportToFile(full, dense, space, normFile);
 }

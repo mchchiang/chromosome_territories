@@ -27,8 +27,8 @@ int main(int argc, char* argv[]){
   string contactFile (argv[++argi]);
 
   // For storing the averaged contact map
-  CMap avgMap = ContactMap::createZeroMap(numOfBeads, numOfBeads);
-  CMap map = ContactMap::createZeroMap(numOfBeads, numOfBeads);
+  CMap avgMap = ContactMap::createZeroMap(numOfBeads);
+  CMap map = ContactMap::createZeroMap(numOfBeads);
   int numOfPosFiles = argc - (++argi);
 
   for (int i {argi}; i < argc; i++){
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]){
   }
 
   // Reduce the resolution of the map
-  avgMap->reduceByBin(block, block);
+  avgMap->reduceByBin(block);
   
   // Output map
   avgMap->exportToFile(true, true, true, contactFile);

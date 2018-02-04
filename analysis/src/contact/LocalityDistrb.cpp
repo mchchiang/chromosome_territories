@@ -39,8 +39,7 @@ int main(int argc, char* argv[]){
   bool full {true};
   if (mode != "full") full = false;
 
-  CMap map = ContactMap::createFromMatrixFile(numOfBeads, numOfBeads, 
-					      full, matrixFile);
+  CMap map = ContactMap::createFromMatrixFile(numOfBeads, full, matrixFile);
   int numOfBins {static_cast<int>(ceil((max-min)/binSize))};
   double range {max-min};
   vector<double> localDistrb (numOfBins, 0.0);

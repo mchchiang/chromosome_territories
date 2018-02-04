@@ -22,23 +22,21 @@ using std::shared_ptr;
 using std::make_shared;
 
 // Private constructor
-ContactMap::ContactMap(int x, int y, int value){
-  nx = x;
-  ny = y;
-  vector<double> zeroVec (ny, value);
-  contact = new vector<vector<double> >(nx, zeroVec);
+ContactMap::ContactMap(int n, int value){
+  size = n;
+  vector<double> zeroVec (size, value);
+  contact = new vector<vector<double> >(size, zeroVec);
 }
 
 // Create contact map
-CMap ContactMap::createZeroMap(int nx, int ny){
-  CMap map {new ContactMap(nx,ny)};
+CMap ContactMap::createZeroMap(int n){
+  CMap map {new ContactMap(n)};
   return map;
 }
 
 CMap ContactMap::createFromArray(vector<vector<double> >* matrix){
-  int x = (*matrix).size();
-  int y = (*matrix)[0].size();
-  CMap map {new ContactMap(x,y)};
+  int n = (*matrix).size();
+  CMap map {new ContactMap(n)};
   map->importFromArray(matrix);
   return map;
 }
@@ -48,16 +46,16 @@ ContactMap::createFromPosFile(int numOfBeads, double lx, double ly, double lz,
 			      double cutoff, string contactType,
 			      int startTime, int endTime, int timeInc,
 			      string file){
-  CMap map {new ContactMap(numOfBeads, numOfBeads)};
+  CMap map {new ContactMap(numOfBeads)};
   map->importFromPosFile(numOfBeads, lx, ly, lz, cutoff, contactType,
 			 startTime, endTime, timeInc, file);
   return map;
 }
 
-CMap ContactMap::createFromMatrixFile(int nx, int ny, bool full,
+CMap ContactMap::createFromMatrixFile(int n, bool full,
 				      string file){
-  CMap map {new ContactMap{nx,ny}};
-  map->importFromMatrixFile(nx, ny, full, file);
+  CMap map {new ContactMap(n)};
+  map->importFromMatrixFile(n, full, file);
   return map;
 }
 
@@ -87,7 +85,7 @@ void ContactMap::importFromPosFile(int numOfBeads,
   }
 
   // Reset the contact map
-  reset(numOfBeads, numOfBeads);
+  reset(numOfBeads);
   
   string line, sym;
   double x, y, z;
@@ -144,8 +142,7 @@ void ContactMap::importFromPosFile(int numOfBeads,
   delete type;
 }
 
-void ContactMap::importFromMatrixFile(int newnx, int newny, 
-				      bool full, string file){
+void ContactMap::importFromMatrixFile(int n, bool full, string file){
   ifstream reader;
   reader.open(file);
   
@@ -156,7 +153,7 @@ void ContactMap::importFromMatrixFile(int newnx, int newny,
   }
 
   // Reset the contact map
-  reset(newnx, newny);
+  reset(n);
 
   // Read the contact map values  
   istringstream iss;
@@ -172,9 +169,9 @@ void ContactMap::importFromMatrixFile(int newnx, int newny,
       iss.str(line);
       iss >> i >> j >> count;
       // Check to make sure bin indices are not out of range
-      if (i < 0 || i >= nx){
+      if (i < 0 || i >= size){
 	cout << "Index i out of range: " << i << endl;
-      } else if (j < 0 || j >= ny){
+      } else if (j < 0 || j >= size){
 	cout << "Index j out of range: " << j << endl;
       } 
 
@@ -189,14 +186,13 @@ void ContactMap::importFromMatrixFile(int newnx, int newny,
 }
 
 void ContactMap::importFromArray(vector<vector<double> >* matrix){
-  int x = (*matrix).size();
-  int y = (*matrix)[0].size();
+  int n = (*matrix).size();
   
   // Reset the contact map
-  reset(x, y);
+  reset(n);
 
-  for (int i {}; i < nx; i++){
-    for (int j {}; j < ny; j++){
+  for (int i {}; i < n; i++){
+    for (int j {}; j < n; j++){
       set(i, j, (*matrix)[i][j]);
     }
   }
@@ -206,7 +202,7 @@ void ContactMap::importFromArray(vector<vector<double> >* matrix){
 void ContactMap::computeContact(double cutoff,
 				vector<vector<double> >* position){
   double dx, dy, dz;
-  for (int i {}; i < nx; i++){
+  for (int i {}; i < size; i++){
     set(i, i, get(i, i) + 1.0);
     for (int j {}; j < i; j++){
       dx = (*position)[i][0] - (*position)[j][0];
@@ -226,7 +222,7 @@ void ContactMap::computeColourContact(double cutoff,
 				      vector<vector<double> >* position,
 				      vector<int>* type){
   double dx, dy, dz;
-  for (int i {}; i < nx; i++){
+  for (int i {}; i < size; i++){
     set(i, i, get(i, i) + 1.0);
     for (int j {}; j < i; j++){
       dx = (*position)[i][0] - (*position)[j][0];
@@ -263,47 +259,42 @@ double ContactMap::get(int i, int j){
 
 // Set all contacts to zero
 void ContactMap::setZero(){
-  for (int i {}; i < nx; i++){
+  for (int i {}; i < size; i++){
     std::fill((*contact)[i].begin(), (*contact)[i].end(), 0.0);
   }
 }
 
-void ContactMap::reset(int newnx, int newny){
+void ContactMap::reset(int n){
   // Only reset the contact map if the dimensions are valid
-  if (newnx < 0 || newny < 0) return;
+  if (n < 0) return;
 
-  // Erase current data if the new map is larger
-  if (newnx*newny > nx*ny) setZero();
+  // Erase the current data
+  setZero();
 
   // Resize the contact map to fit new data
-  if (nx != newnx || ny != newny){
-    (*contact).resize(newnx);
-    for (int i {}; i < newnx; i++){
-      (*contact)[i].resize(newny, 0.0);
+  if (size != n){
+    (*contact).resize(n);
+    for (int i {}; i < n; i++){
+      (*contact)[i].resize(n, 0.0);
     }
   }
-  
-  // Erase current data if the new map is smaller
-  if (newnx*newny <= nx*ny) setZero();
-  
-  nx = newnx;
-  ny = newny;
+  size = n;
 }
 
 // Normalisation methods
 void ContactMap::vanillaNorm(){
   // Sum rows and columns
-  vector<double>* xSum {new vector<double>(nx, 0.0)};
-  vector<double>* ySum {new vector<double>(ny, 0.0)};
-  for (int i {}; i < nx; i++){
-    for (int j {}; j < ny; j++){
+  vector<double>* xSum {new vector<double>(size, 0.0)};
+  vector<double>* ySum {new vector<double>(size, 0.0)};
+  for (int i {}; i < size; i++){
+    for (int j {}; j < size; j++){
       (*xSum)[i] += get(i, j);
       (*ySum)[j] += get(i, j);
     }
   }
   // Normalise the contact map
-  for (int i {}; i < nx; i++){
-    for (int j {}; j < ny; j++){
+  for (int i {}; i < size; i++){
+    for (int j {}; j < size; j++){
       if ((*xSum)[i] != 0 && (*ySum)[j] != 0){
 	set(i, j, get(i, j) / sqrt((*xSum)[i]*(*ySum)[j]));
       } else {
@@ -318,8 +309,8 @@ void ContactMap::vanillaNorm(){
 // Normalise the contact map by the contact probability function
 void ContactMap::correlationNorm(){
   shared_ptr<vector<double> > prob {getGenomeDistContactProb()};
-  for (int i {}; i < nx; i++){
-    for (int j {}; j < ny; j++){
+  for (int i {}; i < size; i++){
+    for (int j {}; j < size; j++){
       set(i, j, get(i, j) / (*prob)[abs(i-j)]);
     }
   }
@@ -327,38 +318,37 @@ void ContactMap::correlationNorm(){
 
 // Return the contact probability as a function of genome distance
 shared_ptr<vector<double> > ContactMap::getGenomeDistContactProb(){
-  shared_ptr<vector<double> > prob = make_shared<vector<double> >(nx, 0.0);
-  for (int i {}; i < nx; i++){
+  shared_ptr<vector<double> > prob = make_shared<vector<double> >(size, 0.0);
+  for (int i {}; i < size; i++){
     for (int j {}; j <= i; j++){
       (*prob)[abs(i-j)] += get(i,j);
     }
   }
   // Normalise
-  for (int i {}; i < nx; i++){
-    (*prob)[i] /= static_cast<double>(nx-i);
+  for (int i {}; i < size; i++){
+    (*prob)[i] /= static_cast<double>(size-i);
   }
   return prob;
 }
 
 
 // Reduce the resolution of the contact map
-void ContactMap::reduceByBin(int binx, int biny){
+void ContactMap::reduceByBin(int bin){
   // No need to resize if there is no change
-  if (binx == 1 && biny == 1) return;
+  if (bin == 1) return;
   
   // Compute the new size of the contact map
-  int newnx = static_cast<int>(ceil(static_cast<double>(nx) / binx));
-  int newny = static_cast<int>(ceil(static_cast<double>(ny) / biny));
+  int n = static_cast<int>(ceil(static_cast<double>(size) / bin));
 
   // Average the original map values
   double sum;
   int count;
-  for (int i {}; i < newnx; i++){
-    for (int j {}; j < newny; j++){
+  for (int i {}; i < n; i++){
+    for (int j {}; j < n; j++){
       sum = 0.0;
       count = 0;
-      for (int k {i*binx}; k < (i+1)*binx && k < nx; k++){
-	for (int l {j*biny}; l < (j+1)*biny && l < ny; l++){
+      for (int k {i*bin}; k < (i+1)*bin && k < size; k++){
+	for (int l {j*bin}; l < (j+1)*bin && l < size; l++){
 	  sum += get(k, l);
 	  count++;
 	}
@@ -368,12 +358,11 @@ void ContactMap::reduceByBin(int binx, int biny){
   }
   
   // Resize the contact map to the new size
-  for (int i {}; i < newnx; i++){
-    (*contact)[i].resize(newny);
+  for (int i {}; i < n; i++){
+    (*contact)[i].resize(n);
   }
-  (*contact).resize(newnx);
-  nx = newnx;
-  ny = newny;
+  (*contact).resize(n);
+  size = n;
 }
 
 // Output method
@@ -391,8 +380,8 @@ void ContactMap::exportToFile(bool full, bool dense, bool space, string file){
 
   double value;
   const double tol {1e-15};
-  for (int i {}; i < nx; i++){
-    for (int j {}; j < ny; j++){
+  for (int i {}; i < size; i++){
+    for (int j {}; j < size; j++){
       if (!full && j > i) break;
       value = get(i, j);
       if (!dense && fabs(value) < tol)	continue;

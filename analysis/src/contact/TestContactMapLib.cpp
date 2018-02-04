@@ -51,26 +51,27 @@ BOOST_AUTO_TEST_CASE(TestInContact){
 }
 
 BOOST_AUTO_TEST_CASE(TestCreateZeroMap){
-  int nx {3}, ny {4};
-  CMap map = ContactMap::createZeroMap(nx, ny);
-  for (int i {}; i < nx; i++){
-    for (int j {}; j < ny; j++){
+  int size {4};
+  CMap map = ContactMap::createZeroMap(size);
+  for (int i {}; i < size; i++){
+    for (int j {}; j < size; j++){
       BOOST_CHECK_CLOSE(map->get(i,j), 0.0, tol);
     }
   }
 }
 
 BOOST_AUTO_TEST_CASE(TestCreateFromArray){
-  int nx {3}, ny {4};
+  int size {4};
   vector< vector<double>>* matrix  = new vector< vector<double>>
     {
       {0.2, 0.3, 0.1, 0.4},
       {0.1, 0.2, 0.5, 0.3},
-      {0.4, 0.1, 0.7, 0.6}
+      {0.4, 0.1, 0.7, 0.6},
+      {0.2, 0.5, 0.8, 0.9}
     };
   CMap map = ContactMap::createFromArray(matrix);
-  for (int i {}; i < nx; i++){
-    for (int j {}; j < ny; j++){
+  for (int i {}; i < size; i++){
+    for (int j {}; j < size; j++){
       BOOST_CHECK_CLOSE(map->get(i,j), (*matrix)[i][j], tol);
     }
   }
@@ -78,7 +79,7 @@ BOOST_AUTO_TEST_CASE(TestCreateFromArray){
 }
 
 BOOST_AUTO_TEST_CASE(TestCreateFromPosFile){
-  string file {"../../../src/contact/ContactMapPosFileTest1.dat"};
+  string file {"ContactMapPosFileTest1.dat"};
   int l {10};
   int numOfBeads {5};
   double cutoff {2.0};
@@ -106,19 +107,20 @@ BOOST_AUTO_TEST_CASE(TestCreateFromPosFile){
 
 BOOST_AUTO_TEST_CASE(TestReset1){
   // Test the case for expanding the contact map
- int nx {3}, ny {4};
+ int size {4};
   vector< vector<double>>* matrix  = new vector< vector<double>>
     {
       {0.2, 0.3, 0.1, 0.4},
       {0.1, 0.2, 0.5, 0.3},
-      {0.4, 0.1, 0.7, 0.6}
+      {0.4, 0.1, 0.7, 0.6},
+      {0.2, 0.5, 0.8, 0.9}
     };
   
   CMap map = ContactMap::createFromArray(matrix);
-  int newnx {nx+10}, newny {ny+9};
-  map->reset(newnx,newny);
-  for (int i {}; i < newnx; i++){
-    for (int j {}; j < newny; j++){
+  int newSize {size+10};
+  map->reset(newSize);
+  for (int i {}; i < newSize; i++){
+    for (int j {}; j < newSize; j++){
       BOOST_CHECK_CLOSE(map->get(i,j), 0.0, tol);
     }
   }
@@ -127,19 +129,20 @@ BOOST_AUTO_TEST_CASE(TestReset1){
 
 BOOST_AUTO_TEST_CASE(TestReset2){
   // Test the case for reducing the contact map
- int nx {3}, ny {4};
+ int size {4};
   vector< vector<double>>* matrix  = new vector< vector<double>>
     {
       {0.2, 0.3, 0.1, 0.4},
       {0.1, 0.2, 0.5, 0.3},
-      {0.4, 0.1, 0.7, 0.6}
+      {0.4, 0.1, 0.7, 0.6},
+      {0.2, 0.5, 0.8, 0.9}
     };
   
   CMap map = ContactMap::createFromArray(matrix);
-  int newnx {nx-1}, newny {ny-2};
-  map->reset(newnx,newny);
-  for (int i {}; i < newnx; i++){
-    for (int j {}; j < newny; j++){
+  int newSize {size-2};
+  map->reset(newSize);
+  for (int i {}; i < newSize; i++){
+    for (int j {}; j < newSize; j++){
       BOOST_CHECK_CLOSE(map->get(i,j), 0.0, tol);
     }
   }
@@ -148,7 +151,7 @@ BOOST_AUTO_TEST_CASE(TestReset2){
 
 
 BOOST_AUTO_TEST_CASE(TestReduceByBin1){
-  int nx {4}, ny {4};
+  int size {4};
   vector< vector<double>>* matrix  = new vector< vector<double>>
     {
       {0.2, 0.3, 0.1, 0.4},
@@ -164,11 +167,11 @@ BOOST_AUTO_TEST_CASE(TestReduceByBin1){
     };
   
   CMap map = ContactMap::createFromArray(matrix);
-  int binx {2}, biny {2};
-  int newnx {nx/binx}, newny {ny/biny};
-  map->reduceByBin(binx,biny);
-  for (int i {}; i < newnx; i++){
-    for (int j {}; j < newny; j++){
+  int bin {2};
+  int newSize {size/bin};
+  map->reduceByBin(bin);
+  for (int i {}; i < newSize; i++){
+    for (int j {}; j < newSize; j++){
       BOOST_CHECK_CLOSE(map->get(i,j), expect[i][j], tol);
     }
   }
@@ -180,24 +183,21 @@ BOOST_AUTO_TEST_CASE(TestReduceByBin2){
     {
       {0.2, 0.3, 0.1},
       {0.1, 0.2, 0.5},
-      {0.4, 0.1, 0.7},
-      {0.5, 0.1, 0.9},
-      {0.6, 0.8, 0.1}
+      {0.4, 0.1, 0.7}
     };
 
   vector< vector<double>> expect 
     {
       {0.2, 0.3},
-      {0.275, 0.8},
-      {0.7, 0.1}
+      {0.25, 0.7}
     };
   
   CMap map = ContactMap::createFromArray(matrix);
-  int binx {2}, biny {2};
-  int newnx {3}, newny {2};
-  map->reduceByBin(binx,biny);
-  for (int i {}; i < newnx; i++){
-    for (int j {}; j < newny; j++){
+  int bin {2};
+  int newSize {2};
+  map->reduceByBin(bin);
+  for (int i {}; i < newSize; i++){
+    for (int j {}; j < newSize; j++){
       BOOST_CHECK_CLOSE(map->get(i,j), expect[i][j], tol);
     }
   }
@@ -205,7 +205,7 @@ BOOST_AUTO_TEST_CASE(TestReduceByBin2){
 }
 
 BOOST_AUTO_TEST_CASE(TestVanillaNorm1){
-  int nx {4}, ny {4};
+  int size {4};
   vector< vector<double>>* matrix  = new vector< vector<double>>
     {
       {0.2, 0.3, 0.1, 0.4},
@@ -224,14 +224,15 @@ BOOST_AUTO_TEST_CASE(TestVanillaNorm1){
   
   CMap map = ContactMap::createFromArray(matrix);
   map->vanillaNorm();
-  for (int i {}; i < nx; i++){
-    for (int j {}; j < ny; j++){
+  for (int i {}; i < size; i++){
+    for (int j {}; j < size; j++){
       BOOST_CHECK_CLOSE(map->get(i,j), expect[i][j], tol);
     }
   }
   delete matrix;  
 }
 
+/*
 BOOST_AUTO_TEST_CASE(TestVanillaNorm2){
   int nx {5}, ny {3};
   vector< vector<double>>* matrix  = new vector< vector<double>>
@@ -261,5 +262,5 @@ BOOST_AUTO_TEST_CASE(TestVanillaNorm2){
   }
   delete matrix; 
 }
-
+*/
 

@@ -35,8 +35,7 @@ int main(int argc, char* argv[]){
   bool full {true};
   if (mode != "full") full = false;
 
-  CMap map = ContactMap::createFromMatrixFile(numOfBeads, numOfBeads, 
-					      full, matrixFile);
+  CMap map = ContactMap::createFromMatrixFile(numOfBeads, full, matrixFile);
   
   // Compute locality
   double local {}, distal {}, mean {};
