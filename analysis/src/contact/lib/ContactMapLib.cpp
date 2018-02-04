@@ -320,7 +320,7 @@ void ContactMap::correlationNorm(){
   shared_ptr<vector<double> > prob {getGenomeDistContactProb()};
   for (int i {}; i < nx; i++){
     for (int j {}; j < ny; j++){
-      set(i, j, get(i, j) / (*prob)[abs(i-j)];
+      set(i, j, get(i, j) / (*prob)[abs(i-j)]);
     }
   }
 }
