@@ -160,6 +160,7 @@ int main(int argc, char* argv[]){
 
   // Delete resources
   delete position;
+  delete type;
   delete contactMap;
 
 }
