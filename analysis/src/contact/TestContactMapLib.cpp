@@ -78,7 +78,7 @@ BOOST_AUTO_TEST_CASE(TestCreateFromArray){
 }
 
 BOOST_AUTO_TEST_CASE(TestCreateFromPosFile){
-  string file {"ContactMapPosFileTest1.dat"};
+  string file {"../../../src/contact/ContactMapPosFileTest1.dat"};
   int l {10};
   int numOfBeads {5};
   double cutoff {2.0};
