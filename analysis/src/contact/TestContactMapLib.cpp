@@ -220,7 +220,7 @@ BOOST_AUTO_TEST_CASE(TestVanillaNorm1){
       {0.5, 0.1, 0.9, 0.8}
     };
 
-  vector< vector<double>> expect 
+  vector<vector<double> > expect 
     {
       {0.18257419, 0.35856858, 0.06741999, 0.27602622},
       {0.08703883, 0.22792115, 0.32141217, 0.19738551},
@@ -270,14 +270,97 @@ BOOST_AUTO_TEST_CASE(TestVanillaNorm2){
 }
 */
 
-BOOST_AUTO_TEST_CASE(TestMaxEigen1){
+/*BOOST_AUTO_TEST_CASE(TestGetGenomeDistContactProb){
   vector<vector<double> >* matrix = new vector<vector<double> >
     {
-      {1.0, 0.0, 0.0, 0.0},
-      {0.0, 5.0, 0.0, 0.0},
-      {0.0, 0.0, 8.0, 0.0},
-      {0.0, 0.0, 0.0, 2.0}
+      {0.2, 0.3, 0.1, 0.4},
+      {0.1, 0.2, 0.5, 0.3},
+      {0.4, 0.1, 0.7, 0.6},
+      {0.5, 0.1, 0.9, 0.8}
     };
+  
+    }*/
+
+BOOST_AUTO_TEST_CASE(TestGetLinearProb){
+  int size {4};
+  vector<vector<double> >* matrix {new vector<vector<double> >
+      {
+	{0.2, 0.3, 0.7, 0.4},
+	{0.3, 0.6, 0.1, 0.5},
+	{0.7, 0.1, 0.9, 0.0},
+	{0.4, 0.5, 0.0, 0.8}
+      }};
+  vector<double> expect {0.625, 0.13333333, 0.6, 0.4};
+  CMap map = ContactMap::createFromArray(matrix);
+  shared_ptr<vector<double> > prob {map->getLinearProb()};
+  for (int i {}; i < size; i++){
+    BOOST_CHECK_CLOSE((*prob)[i], expect[i], tol);
+  }
+  delete matrix;
+}
+
+BOOST_AUTO_TEST_CASE(TestlinearProbNorm){
+  int size {4};
+  vector<vector<double> >* matrix {new vector<vector<double> >
+      {
+	{0.2, 0.3, 0.7, 0.4},
+	{0.3, 0.6, 0.1, 0.5},
+	{0.7, 0.1, 0.9, 0.0},
+	{0.4, 0.5, 0.0, 0.8}
+      }};
+  vector<vector<double> > expect 
+  {
+    {0.32, 2.25, 1.16666666, 1.0},
+    {2.25, 0.96, 0.75, 0.83333333},
+    {1.16666666, 0.75, 1.44, 0.0},
+    {1.0, 0.83333333, 0.0, 1.28}
+  };
+
+  CMap map = ContactMap::createFromArray(matrix);
+  map->linearProbNorm();
+  for (int i {}; i < size; i++){
+    for (int j {}; j < size; j++){
+      BOOST_CHECK_CLOSE(map->get(i,j), expect[i][j], tol);
+    }
+  }
+  delete matrix;
+}
+
+BOOST_AUTO_TEST_CASE(TestConvertToCorrelation){
+  int size {4};
+  vector<vector<double> >* matrix {new vector<vector<double> >
+      {
+	{2.0, 3.0, 7.0, 4.0},
+	{3.0, 6.0, 1.0, 5.0},
+	{7.0, 1.0, 9.0, 0.0},
+	{4.0, 5.0, 0.0, 8.0},
+      }};
+  vector<vector<double> > expect 
+  {
+    {1.0, -0.6263001, 0.41842083, -0.6071188},
+    {-0.6263001, 1.0, -0.9426773, 0.83035003},
+    {0.41842083, -0.9426773, 1.0, -0.8948084},
+    {-0.6071188, 0.83035003, -0.8948084, 1.0}
+  };
+  
+  CMap map = ContactMap::createFromArray(matrix);
+  map->convertToCorrelation();
+  for (int i {}; i < size; i++){
+    for (int j {}; j < size; j++){
+      BOOST_CHECK_CLOSE(map->get(i,j), expect[i][j], tol);
+    }
+  }
+  delete matrix;
+}
+
+BOOST_AUTO_TEST_CASE(TestMaxEigen1){
+  vector<vector<double> >* matrix {new vector<vector<double> >
+      {
+	{1.0, 0.0, 0.0, 0.0},
+	{0.0, 5.0, 0.0, 0.0},
+	{0.0, 0.0, 8.0, 0.0},
+	{0.0, 0.0, 0.0, 2.0}
+      }};
   
   CMap map = ContactMap::createFromArray(matrix);
   shared_ptr<vector<double> > vec = make_shared<vector<double> >();
