@@ -367,8 +367,11 @@ double ContactMap::maxEigen(double conv, shared_ptr<vector<double> > evec){
   (*evec) = conv_to<vector<double> >::from(*v);
 
   // Get the eigenvalue 
-  double vnorm = norm(*v);
-  return as_scalar((*v).t()*(*contact)*(*v)) / (vnorm*vnorm);
+  double vnorm {norm(*v)};
+  double eigenval {as_scalar((*v).t()*(*contact)*(*v)) / (vnorm*vnorm)};
+  delete v;
+  delete w;
+  return eigenval;
 }
 
 
