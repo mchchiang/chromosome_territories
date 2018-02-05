@@ -2,7 +2,7 @@
 CXX := g++
 CXXFLAGS := -O3 -Wall -Wshadow -std=c++11
 INC = ./lib/
-LDFLAGS := 
+LDFLAGS := -larmadillo
 
 PRG_SUFFIX_FLAG := 0
 
