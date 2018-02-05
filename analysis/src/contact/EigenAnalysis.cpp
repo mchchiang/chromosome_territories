@@ -38,7 +38,8 @@ int main(int argc, char* argv[]){
   if (mode != "full") full = false;
 
   CMap map = ContactMap::createFromMatrixFile(numOfBeads, full, matrixFile);
-  map->correlationNorm();
+  map->linearProbNorm();
+  map->convertToCorrelation();
   
   shared_ptr<vector<double> > eigenvec = make_shared<vector<double> >();
   double convergence {1e-10};
