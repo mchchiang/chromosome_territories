@@ -72,6 +72,9 @@ public:
   // Return the contact probability as a function of genome distance
   shared_ptr<vector<double> > getGenomeDistContactProb();
   
+  // Return the largest eigenvalue of the contact matrix
+  double maxEigen (double convergence, shared_ptr<vector<double> > vec);
+
   // Reduce the resolution of the contact map
   void reduceByBin(int bin);
 

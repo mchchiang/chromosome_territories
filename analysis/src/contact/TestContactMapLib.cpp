@@ -6,11 +6,17 @@
 
 #define BOOST_TEST_MODULE TestContactMapLib
 #include <iostream>
+#include <vector>
+#include <memory>
 #include <boost/test/included/unit_test.hpp>
 #include "ContactMapLib.hpp"
 
 using std::cout;
 using std::endl;
+using std::vector;
+using std::string;
+using std::shared_ptr;
+using std::make_shared;
 
 const double tol {1e-5};
 
@@ -62,7 +68,7 @@ BOOST_AUTO_TEST_CASE(TestCreateZeroMap){
 
 BOOST_AUTO_TEST_CASE(TestCreateFromArray){
   int size {4};
-  vector< vector<double>>* matrix  = new vector< vector<double>>
+  vector<vector<double> >* matrix  = new vector<vector<double> >
     {
       {0.2, 0.3, 0.1, 0.4},
       {0.1, 0.2, 0.5, 0.3},
@@ -108,7 +114,7 @@ BOOST_AUTO_TEST_CASE(TestCreateFromPosFile){
 BOOST_AUTO_TEST_CASE(TestReset1){
   // Test the case for expanding the contact map
  int size {4};
-  vector< vector<double>>* matrix  = new vector< vector<double>>
+  vector<vector<double> >* matrix  = new vector<vector<double> >
     {
       {0.2, 0.3, 0.1, 0.4},
       {0.1, 0.2, 0.5, 0.3},
@@ -130,7 +136,7 @@ BOOST_AUTO_TEST_CASE(TestReset1){
 BOOST_AUTO_TEST_CASE(TestReset2){
   // Test the case for reducing the contact map
  int size {4};
-  vector< vector<double>>* matrix  = new vector< vector<double>>
+  vector<vector<double> >* matrix  = new vector<vector<double> >
     {
       {0.2, 0.3, 0.1, 0.4},
       {0.1, 0.2, 0.5, 0.3},
@@ -152,7 +158,7 @@ BOOST_AUTO_TEST_CASE(TestReset2){
 
 BOOST_AUTO_TEST_CASE(TestReduceByBin1){
   int size {4};
-  vector< vector<double>>* matrix  = new vector< vector<double>>
+  vector<vector<double> >* matrix  = new vector<vector<double> >
     {
       {0.2, 0.3, 0.1, 0.4},
       {0.1, 0.2, 0.5, 0.3},
@@ -179,7 +185,7 @@ BOOST_AUTO_TEST_CASE(TestReduceByBin1){
 }
 
 BOOST_AUTO_TEST_CASE(TestReduceByBin2){
-  vector< vector<double>>* matrix  = new vector< vector<double>>
+  vector<vector<double> >* matrix  = new vector<vector<double> >
     {
       {0.2, 0.3, 0.1},
       {0.1, 0.2, 0.5},
@@ -206,7 +212,7 @@ BOOST_AUTO_TEST_CASE(TestReduceByBin2){
 
 BOOST_AUTO_TEST_CASE(TestVanillaNorm1){
   int size {4};
-  vector< vector<double>>* matrix  = new vector< vector<double>>
+  vector<vector<double> >* matrix  = new vector<vector<double> >
     {
       {0.2, 0.3, 0.1, 0.4},
       {0.1, 0.2, 0.5, 0.3},
@@ -264,3 +270,35 @@ BOOST_AUTO_TEST_CASE(TestVanillaNorm2){
 }
 */
 
+BOOST_AUTO_TEST_CASE(TestMaxEigen1){
+  vector<vector<double> >* matrix = new vector<vector<double> >
+    {
+      {1.0, 0.0, 0.0, 0.0},
+      {0.0, 5.0, 0.0, 0.0},
+      {0.0, 0.0, 8.0, 0.0},
+      {0.0, 0.0, 0.0, 2.0}
+    };
+  
+  CMap map = ContactMap::createFromArray(matrix);
+  shared_ptr<vector<double> > vec = make_shared<vector<double> >();
+  double convergence {1e-10};
+  double eigenvalue = map->maxEigen(convergence, vec);
+  BOOST_CHECK_CLOSE(eigenvalue, 8.0, tol);
+  delete matrix;
+}
+
+BOOST_AUTO_TEST_CASE(TestMaxEigen2){
+  vector<vector<double> >* matrix = new vector<vector<double> >
+    {
+      {5.0, 1.0, -5.0},
+      {1.0, 5.0, -5.0},
+      {-5.0, -5.0, 11.0}
+    };
+  
+  CMap map = ContactMap::createFromArray(matrix);
+  shared_ptr<vector<double> > vec = make_shared<vector<double> >();
+  double convergence {1e-10};
+  double eigenvalue = map->maxEigen(convergence, vec);
+  BOOST_CHECK_CLOSE(eigenvalue, 16.0, tol);
+  delete matrix;
+}

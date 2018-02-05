@@ -343,6 +343,35 @@ shared_ptr<vector<double> > ContactMap::getGenomeDistContactProb(){
 }
 
 
+double ContactMap::maxEigen(double conv, shared_ptr<vector<double> > evec){
+  // Do power iteration to find the largest eigenvalue and eigenvector
+  // Init random vector
+  vec* v {new vec(size, fill::randu)};
+  vec* w {new vec(size)};
+
+  (*v) = (*v) / norm(*v); // Make sure the vector is normalised
+
+  cout << "Finding maximum eigenvalue ..." << endl;
+  int iter {};
+  double delta;
+  do {
+    (*w) = (*contact) * (*v);
+    (*w) = (*w) / norm(*w);
+    delta = norm((*w)-(*v));
+    (*v) = (*w);
+    iter++;
+    cout << "After iteration " << iter << ": delta = " << delta << endl;
+  } while (delta > conv);
+
+  // Store the eigenvector
+  (*evec) = conv_to<vector<double> >::from(*v);
+
+  // Get the eigenvalue 
+  double vnorm = norm(*v);
+  return as_scalar((*v).t()*(*contact)*(*v)) / (vnorm*vnorm);
+}
+
+
 // Reduce the resolution of the contact map
 void ContactMap::reduceByBin(int bin){
   // No need to resize if there is no change
