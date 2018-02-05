@@ -5,10 +5,13 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <armadillo>
 
 using std::string;
 using std::vector;
+using std::unique_ptr;
 using std::shared_ptr;
+using namespace arma;
 
 class ContactMap;
 using CMap = shared_ptr<ContactMap>;
@@ -22,12 +25,12 @@ double distance(double x, double y, double z);
 class ContactMap {
 
 private:
-  vector< vector<double>>* contact;
-  int nx;
-  int ny;
-  
+  unique_ptr<mat> contact;
+  //vector< vector<double>>* contact;
+  int size;
+
   // Private constructor
-  ContactMap(int nx, int ny, int value = 0.0);
+  ContactMap(int n, int value = 0.0);
   
   // Helper methods for computing contacts
   void computeContact(double cutoff, vector< vector<double> >* position);
@@ -37,7 +40,7 @@ private:
 public:
   // Static factory methods
   // Create a contact map with zero interaction
-  static CMap createZeroMap(int nx, int ny);
+  static CMap createZeroMap(int n);
 
   // Create a contact map based on a 2D matrix
   static CMap createFromArray(vector< vector<double>>* matrix);
@@ -50,7 +53,7 @@ public:
 
 
   // Create a contact map from a matrix file
-  static CMap createFromMatrixFile(int nx, int ny, bool full, string file);
+  static CMap createFromMatrixFile(int n, bool full, string file);
   
   // Accessor methods
   // Set the contact probability of the interaction pair (i,j)
@@ -70,13 +73,13 @@ public:
   shared_ptr<vector<double> > getGenomeDistContactProb();
   
   // Reduce the resolution of the contact map
-  void reduceByBin(int binx, int biny);
+  void reduceByBin(int bin);
 
   // Set all contacts to zero
   void setZero();
 
   // Set the contact map to the defined size with all contacts being zero
-  void reset(int nx, int ny);
+  void reset(int n);
 
   // Import contact map from position file
   void importFromPosFile(int numOfBeads, double lx, double ly, double lz,
@@ -84,7 +87,7 @@ public:
 			 int startTime, int endTime, int timeInc, string file);
 
   // Import contact map from a matrix file
-  void importFromMatrixFile(int nx, int ny, bool full, string file);
+  void importFromMatrixFile(int n, bool full, string file);
 
   void importFromArray(vector< vector<double>>* matrix);
 

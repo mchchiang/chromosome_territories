@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <armadillo>
 #include "ContactMapLib.hpp"
 
 using std::cout;
@@ -19,13 +20,17 @@ using std::string;
 using std::vector;
 using std::unique_ptr;
 using std::shared_ptr;
+using std::move;
 using std::make_shared;
+using namespace arma;
 
 // Private constructor
 ContactMap::ContactMap(int n, int value){
   size = n;
-  vector<double> zeroVec (size, value);
-  contact = new vector<vector<double> >(size, zeroVec);
+  unique_ptr<mat> m {new mat(size, size, fill::zeros)}; 
+  contact = std::move(m);
+  //vector<double> zeroVec (size, value);
+  //contact = new vector<vector<double> >(size, zeroVec);
 }
 
 // Create contact map
@@ -250,24 +255,29 @@ double distance(double x, double y, double z){
 
 // Accessor methods
 void ContactMap::set(int i, int j, double value){
-  (*contact)[i][j] = value;
+  contact->at(i,j) = value;
+  //(*contact)[i][j] = value;
 }
 
 double ContactMap::get(int i, int j){
-  return (*contact)[i][j];
+  return contact->at(i,j);
+  //return (*contact)[i][j];
 }
 
 // Set all contacts to zero
 void ContactMap::setZero(){
-  for (int i {}; i < size; i++){
+  contact->zeros();
+  /*for (int i {}; i < size; i++){
     std::fill((*contact)[i].begin(), (*contact)[i].end(), 0.0);
-  }
+    }*/
 }
 
 void ContactMap::reset(int n){
   // Only reset the contact map if the dimensions are valid
   if (n < 0) return;
-
+  
+  contact->zeros(n, n);
+  /*
   // Erase the current data
   setZero();
 
@@ -278,6 +288,7 @@ void ContactMap::reset(int n){
       (*contact)[i].resize(n, 0.0);
     }
   }
+  */
   size = n;
 }
 
@@ -335,7 +346,7 @@ shared_ptr<vector<double> > ContactMap::getGenomeDistContactProb(){
 // Reduce the resolution of the contact map
 void ContactMap::reduceByBin(int bin){
   // No need to resize if there is no change
-  if (bin == 1) return;
+  if (bin <= 1) return;
   
   // Compute the new size of the contact map
   int n = static_cast<int>(ceil(static_cast<double>(size) / bin));
@@ -358,10 +369,12 @@ void ContactMap::reduceByBin(int bin){
   }
   
   // Resize the contact map to the new size
-  for (int i {}; i < n; i++){
+  contact->resize(n,n);
+  /*  for (int i {}; i < n; i++){
     (*contact)[i].resize(n);
   }
   (*contact).resize(n);
+  */
   size = n;
 }
 
