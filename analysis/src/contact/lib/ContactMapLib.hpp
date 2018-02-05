@@ -26,7 +26,6 @@ class ContactMap {
 
 private:
   unique_ptr<mat> contact;
-  //vector< vector<double>>* contact;
   int size;
 
   // Private constructor
@@ -67,13 +66,16 @@ public:
   void vanillaNorm();
 
   // Normalise the contact map by the contact probability function
-  void correlationNorm();
-
+  void linearProbNorm();
+  
+  // Convert the contact matrix to a Pearson's correlation matrix
+  void convertToCorrelation();
+  
   // Return the contact probability as a function of genome distance
-  shared_ptr<vector<double> > getGenomeDistContactProb();
+  shared_ptr<vector<double> > getLinearProb();
   
   // Return the largest eigenvalue of the contact matrix
-  double maxEigen (double convergence, shared_ptr<vector<double> > vec);
+  double maxEigen(double convergence, shared_ptr<vector<double> > vec);
 
   // Reduce the resolution of the contact map
   void reduceByBin(int bin);

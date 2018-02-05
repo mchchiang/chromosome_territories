@@ -29,8 +29,6 @@ ContactMap::ContactMap(int n, int value){
   size = n;
   unique_ptr<mat> m {new mat(size, size, fill::zeros)}; 
   contact = std::move(m);
-  //vector<double> zeroVec (size, value);
-  //contact = new vector<vector<double> >(size, zeroVec);
 }
 
 // Create contact map
@@ -267,9 +265,6 @@ double ContactMap::get(int i, int j){
 // Set all contacts to zero
 void ContactMap::setZero(){
   contact->zeros();
-  /*for (int i {}; i < size; i++){
-    std::fill((*contact)[i].begin(), (*contact)[i].end(), 0.0);
-    }*/
 }
 
 void ContactMap::reset(int n){
@@ -277,18 +272,6 @@ void ContactMap::reset(int n){
   if (n < 0) return;
   
   contact->zeros(n, n);
-  /*
-  // Erase the current data
-  setZero();
-
-  // Resize the contact map to fit new data
-  if (size != n){
-    (*contact).resize(n);
-    for (int i {}; i < n; i++){
-      (*contact)[i].resize(n, 0.0);
-    }
-  }
-  */
   size = n;
 }
 
@@ -318,17 +301,39 @@ void ContactMap::vanillaNorm(){
 }
 
 // Normalise the contact map by the contact probability function
-void ContactMap::correlationNorm(){
-  shared_ptr<vector<double> > prob {getGenomeDistContactProb()};
+void ContactMap::linearProbNorm(){
+  shared_ptr<vector<double> > prob {getLinearProb()};
+  double value;
   for (int i {}; i < size; i++){
     for (int j {}; j < size; j++){
-      set(i, j, get(i, j) / (*prob)[abs(i-j)]);
+      value = (*prob)[abs(i-j)];
+      if (fabs(value) < 1e-10){
+	set(i, j, 0.0);
+      } else {
+	value = get(i, j) / value;
+	set(i, j, value);
+      }
+    }
+  }
+}
+
+// Convert the contact map to a Pearon's correlation matrix
+void ContactMap::convertToCorrelation(){
+  // Correlation matrix is symmetric
+  (*contact) = cor((*contact));
+  // Check for division by zero in computing correlation -
+  // set those entries to zero
+  for (int i {}; i < size; i++){
+    for (int j {}; j < size; j++){
+      if (isnan(contact->at(i,j))){
+	contact->at(i,j) = 0.0;
+      }
     }
   }
 }
 
 // Return the contact probability as a function of genome distance
-shared_ptr<vector<double> > ContactMap::getGenomeDistContactProb(){
+shared_ptr<vector<double> > ContactMap::getLinearProb(){
   shared_ptr<vector<double> > prob = make_shared<vector<double> >(size, 0.0);
   for (int i {}; i < size; i++){
     for (int j {}; j <= i; j++){
@@ -341,7 +346,6 @@ shared_ptr<vector<double> > ContactMap::getGenomeDistContactProb(){
   }
   return prob;
 }
-
 
 double ContactMap::maxEigen(double conv, shared_ptr<vector<double> > evec){
   // Do power iteration to find the largest eigenvalue and eigenvector
@@ -402,11 +406,6 @@ void ContactMap::reduceByBin(int bin){
   
   // Resize the contact map to the new size
   contact->resize(n,n);
-  /*  for (int i {}; i < n; i++){
-    (*contact)[i].resize(n);
-  }
-  (*contact).resize(n);
-  */
   size = n;
 }
 
