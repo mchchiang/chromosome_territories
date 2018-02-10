@@ -1,4 +1,4 @@
-// ContactMapLib.h
+// ContactMapLib.hpp
 #ifndef CONTACTMAP_HPP
 #define CONTACTMAP_HPP
 
@@ -61,6 +61,9 @@ public:
   // Get the contact probability of the interaction pair (i,j)
   double get(int i, int j);
 
+  // Return the linear size of the contact map
+  int getSize();
+
   // Map manipulation methods
   // Normalise the contact map using the vanilla normalisation method
   void vanillaNorm();
@@ -98,6 +101,10 @@ public:
 
   // Output contact map to a file
   void exportToFile(bool full, bool dense, bool space, string file);
+
+  // Combine two contact maps and output them to file
+  static void exportCombineMapsToFile(CMap map1, CMap map2, 
+				      bool dense, bool space, string file);
 };
 
 #endif

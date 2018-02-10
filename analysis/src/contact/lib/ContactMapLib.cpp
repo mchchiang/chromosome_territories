@@ -254,12 +254,15 @@ double distance(double x, double y, double z){
 // Accessor methods
 void ContactMap::set(int i, int j, double value){
   contact->at(i,j) = value;
-  //(*contact)[i][j] = value;
 }
 
 double ContactMap::get(int i, int j){
   return contact->at(i,j);
-  //return (*contact)[i][j];
+}
+
+// Return the linear size of the contact map
+int ContactMap::getSize(){
+  return size;
 }
 
 // Set all contacts to zero
@@ -428,6 +431,44 @@ void ContactMap::exportToFile(bool full, bool dense, bool space, string file){
     for (int j {}; j < size; j++){
       if (!full && j > i) break;
       value = get(i, j);
+      if (!dense && fabs(value) < tol)	continue;
+      writer << i << " " << j << " " << value << endl;
+    }
+    if (!space) continue;
+    writer << endl;
+  }
+}
+
+void ContactMap::exportCombineMapsToFile(CMap map1, CMap map2, 
+					 bool dense, bool space, string file){
+  
+  // Check that both contact matrices are the same size
+  const int size {map1->getSize()};
+  if (size != map2->getSize()){
+    cout << "Contact maps must be the same size!" << endl;
+    return;
+  }
+
+  ofstream writer;
+  writer.open(file);
+  
+  // Check that the file exists and can be written
+  if (!writer){
+    cout << "Problem with opening the output file!" << endl;
+    return; 
+  }
+  
+  writer << std::setprecision(10) << std::fixed;
+
+  double value;
+  const double tol {1e-15};
+  for (int i {}; i < size; i++){
+    for (int j {}; j < size; j++){
+      if (i <= j){
+	value = map2->get(i,j);
+      } else {
+	value = map1->get(i,j);
+      }
       if (!dense && fabs(value) < tol)	continue;
       writer << i << " " << j << " " << value << endl;
     }
