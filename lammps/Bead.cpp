@@ -4,17 +4,17 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
-#include "Bead.h"
+#include "Bead.hpp"
+#include "Bond.hpp"
+#include "Angle.hpp"
 
 using std::cout;
 using std::endl;
 using std::pair;
 using std::shared_ptr;
 using std::make_shared;
-using Bond = Bead::Bond;
-using Angle = Bead::Angle;
-using BondIterator = vector< shared_ptr<Bond> >::iterator;
-using AngleIterator = vector< shared_ptr<Angle> >::iterator;
+using BondIterator = vector<shared_ptr<Bond> >::iterator;
+using AngleIterator = vector<shared_ptr<Angle> >::iterator;
 
 // Constructors
 Bead::Bead(double x, double y, double z,
@@ -76,35 +76,35 @@ int Bead::getLabel(){
 
 shared_ptr<Bond> Bead::getBondWith(shared_ptr<Bead> bead){
   for (BondIterator it = bondList.begin(); it != bondList.end(); it++){
-	shared_ptr<Bond> bond = *it;
-	if (bond->getBead(0) == bead || bond->getBead(1) == bead){
-	  return bond;
-	}
+    shared_ptr<Bond> bond = *it;
+    if (bond->getBead(0) == bead || bond->getBead(1) == bead){
+      return bond;
+    }
   }
   return nullptr;
 }
 
 shared_ptr<Angle> Bead::getAngleWith(shared_ptr<Bead> bead1,
-									 shared_ptr<Bead> bead2){
+				     shared_ptr<Bead> bead2){
   for (AngleIterator it = angleList.begin(); it != angleList.end(); it++){
-	shared_ptr<Angle> angle = *it;
-	shared_ptr<Bead> b1 = angle->getBead(0);
-	shared_ptr<Bead> b2 = angle->getBead(1);
-	shared_ptr<Bead> b3 = angle->getBead(2);
-	if ((bead1 == b1 && (bead2 == b2 || bead2 == b3)) ||
-		(bead1 == b2 && (bead2 == b1 || bead2 == b3)) ||
-		(bead1 == b3 && (bead2 == b1 || bead2 == b2))){
-	  return angle;
-	}
+    shared_ptr<Angle> angle = *it;
+    shared_ptr<Bead> b1 = angle->getBead(0);
+    shared_ptr<Bead> b2 = angle->getBead(1);
+    shared_ptr<Bead> b3 = angle->getBead(2);
+    if ((bead1 == b1 && (bead2 == b2 || bead2 == b3)) ||
+	(bead1 == b2 && (bead2 == b1 || bead2 == b3)) ||
+	(bead1 == b3 && (bead2 == b1 || bead2 == b2))){
+      return angle;
+    }
   }
   return nullptr;
 }
 
-vector< shared_ptr<Bond> >& Bead::getBonds(){
+vector<shared_ptr<Bond> >& Bead::getBonds(){
   return bondList;
 }
 
-vector< shared_ptr<Angle> >& Bead::getAngles(){
+vector<shared_ptr<Angle> >& Bead::getAngles(){
   return angleList;
 }
 
@@ -121,17 +121,17 @@ void Bead::addBondWith(int t, shared_ptr<Bead> bead){
 void Bead::removeBond(shared_ptr<Bond> bond){
   BondIterator it = std::find(bondList.begin(), bondList.end(), bond);
   if (it != bondList.end())
-	bondList.erase(it);
+    bondList.erase(it);
 }
 
 void Bead::removeBondWith(shared_ptr<Bead> bead){
   for (BondIterator it = bondList.begin(); it != bondList.end(); it++){
-	shared_ptr<Bond> bond = *it;
-	if (bond->getBead(0) == bead || bond->getBead(1) == bead){
-	  bead->removeBond(bond);
-	  bondList.erase(it);
-	  break;
-	}
+    shared_ptr<Bond> bond = *it;
+    if (bond->getBead(0) == bead || bond->getBead(1) == bead){
+      bead->removeBond(bond);
+      bondList.erase(it);
+      break;
+    }
   }
 }
 
@@ -140,9 +140,9 @@ void Bead::addAngle(shared_ptr<Angle> angle){
 }
 
 void Bead::addAngleWith(int t, 
-						shared_ptr<Bead> bead1, shared_ptr<Bead> bead2){
+			shared_ptr<Bead> bead1, shared_ptr<Bead> bead2){
   shared_ptr<Angle> angle = 
-	make_shared<Angle>(t, shared_from_this(), bead1, bead2);
+    make_shared<Angle>(t, shared_from_this(), bead1, bead2);
   bead1->addAngle(angle);
   bead2->addAngle(angle);
   addAngle(angle);
@@ -151,111 +151,56 @@ void Bead::addAngleWith(int t,
 void Bead::removeAngle(shared_ptr<Angle> angle){
   AngleIterator it = std::find(angleList.begin(), angleList.end(), angle);
   if (it != angleList.end())
-	angleList.erase(it);
+    angleList.erase(it);
 }
 
 
 void Bead::removeAngleWith(shared_ptr<Bead> bead1, shared_ptr<Bead> bead2){
   for (AngleIterator it = angleList.begin(); it != angleList.end(); it++){
-	shared_ptr<Angle> angle = *it;
-	shared_ptr<Bead> b1 = angle->getBead(0);
-	shared_ptr<Bead> b2 = angle->getBead(1);
-	shared_ptr<Bead> b3 = angle->getBead(2);
-	if ((bead1 == b1 && (bead2 == b2 || bead2 == b3)) ||
-		(bead1 == b2 && (bead2 == b1 || bead2 == b3)) ||
-		(bead1 == b3 && (bead2 == b1 || bead2 == b2))){
-	  bead1->removeAngle(angle);
-	  bead2->removeAngle(angle);
-	  angleList.erase(it);
-	  break;
-	}
+    shared_ptr<Angle> angle = *it;
+    shared_ptr<Bead> b1 = angle->getBead(0);
+    shared_ptr<Bead> b2 = angle->getBead(1);
+    shared_ptr<Bead> b3 = angle->getBead(2);
+    if ((bead1 == b1 && (bead2 == b2 || bead2 == b3)) ||
+	(bead1 == b2 && (bead2 == b1 || bead2 == b3)) ||
+	(bead1 == b3 && (bead2 == b1 || bead2 == b2))){
+      bead1->removeAngle(angle);
+      bead2->removeAngle(angle);
+      angleList.erase(it);
+      break;
+    }
   }
 }
 
 void Bead::removeAllBonds(){
   for (auto const& bond : bondList){
-	shared_ptr<Bead> bead1 = bond->getBead(0);
-	shared_ptr<Bead> bead2 = bond->getBead(1);
-	
-	if (bead1 != shared_from_this())
-	  bead1->removeBond(bond);
-	else
-	  bead2->removeBond(bond);
+    shared_ptr<Bead> bead1 = bond->getBead(0);
+    shared_ptr<Bead> bead2 = bond->getBead(1);
+    
+    if (bead1 != shared_from_this())
+      bead1->removeBond(bond);
+    else
+      bead2->removeBond(bond);
   }
   bondList.clear();
 }
 
 void Bead::removeAllAngles(){
   for (auto const& angle : angleList){
-	shared_ptr<Bead> bead1 = angle->getBead(0);
-	shared_ptr<Bead> bead2 = angle->getBead(1);
-	shared_ptr<Bead> bead3 = angle->getBead(2);
-	
-	if (bead1 == shared_from_this()){
-	  bead2->removeAngle(angle);
-	  bead3->removeAngle(angle);
-	} else if (bead2 == shared_from_this()){
-	  bead1->removeAngle(angle);
-	  bead3->removeAngle(angle);
-	} else {
-	  bead1->removeAngle(angle);
-	  bead2->removeAngle(angle);
-	}
+    shared_ptr<Bead> bead1 = angle->getBead(0);
+    shared_ptr<Bead> bead2 = angle->getBead(1);
+    shared_ptr<Bead> bead3 = angle->getBead(2);
+    
+    if (bead1 == shared_from_this()){
+      bead2->removeAngle(angle);
+      bead3->removeAngle(angle);
+    } else if (bead2 == shared_from_this()){
+      bead1->removeAngle(angle);
+      bead3->removeAngle(angle);
+    } else {
+      bead1->removeAngle(angle);
+      bead2->removeAngle(angle);
+    }
   }
   angleList.clear();
-}
-
-//=================================================================
-
-// Methods for Bond class
-
-// Constructor
-Bond::Bond(int t, shared_ptr<Bead> b1, shared_ptr<Bead> b2) :
-  type {t}, beads {b1, b2} {}
-
-// Accessor methods
-shared_ptr<Bead> Bond::getBead(int id){
-  return beads[id];
-}
-
-void Bond::setType(int t){
-  type = t;
-}
-
-int Bond::getType(){
-  return type;
-}
-
-void Bond::unbond(){
-  for (int i {}; i < numOfBeads; i++){
-	beads[i]->removeBond(shared_from_this());
-  }
-}
-
-//=================================================================
-
-// Methods for Angle class
-
-// Constructor
-Angle::Angle(int t, shared_ptr<Bead> b1, 
-				   shared_ptr<Bead> b2, shared_ptr<Bead> b3) :
-  type {t}, beads {b1, b2, b3} {}
-
-// Accessor methods
-shared_ptr<Bead> Angle::getBead(int id){
-  return beads[id];
-}
-
-void Angle::setType(int t){
-  type = t;
-}
-
-int Angle::getType(){
-  return type;
-}
-
-void Angle::unbond(){
-  for (int i {}; i < numOfBeads; i++){
-	beads[i]->removeAngle(shared_from_this());
-  }
 }

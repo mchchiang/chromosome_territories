@@ -1,7 +1,7 @@
 // DataManager.h
 
-#ifndef DATA_MANAGER_H
-#define DATA_MANAGER_H
+#ifndef DATA_MANAGER_HPP
+#define DATA_MANAGER_HPP
 
 #include <vector>
 #include <string>

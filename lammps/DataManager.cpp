@@ -4,7 +4,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
-#include "DataManager.h"
+#include "DataManager.hpp"
 
 using std::cout;
 using std::endl;

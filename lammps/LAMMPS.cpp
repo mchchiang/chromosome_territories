@@ -8,9 +8,11 @@
 #include <memory>
 #include <map>
 #include <string>
-#include "Bead.h"
-#include "Polymer.h"
-#include "LAMMPS.h"
+#include "Bead.hpp"
+#include "Bond.hpp"
+#include "Angle.hpp"
+#include "Polymer.hpp"
+#include "LAMMPS.hpp"
 
 using std::cout;
 using std::endl;
@@ -531,8 +533,8 @@ bool LAMMPS::exportData(string outFile, string mapFile){
   int angleIndexCount {1};
 
   map< shared_ptr<Bead>, int> beadIndexMap {};
-  map< shared_ptr<Bead::Bond>, int> bondIndexMap {};
-  map< shared_ptr<Bead::Angle>, int> angleIndexMap {};  
+  map< shared_ptr<Bond>, int> bondIndexMap {};
+  map< shared_ptr<Angle>, int> angleIndexMap {};  
 
   cout << "Start writing LAMMPS file ..." << endl;
 
@@ -630,7 +632,7 @@ bool LAMMPS::exportData(string outFile, string mapFile){
 }
 
 void LAMMPS::writePositionAndVelocity(const shared_ptr<Bead>& bead,
-				      map< shared_ptr<Bead>, int>& beadIndexMap,
+				      map<shared_ptr<Bead>, int>& beadIndexMap,
 				      stringstream& positionWriter,
 				      stringstream& velocityWriter,
 				      int& beadIndexCount){
@@ -643,14 +645,14 @@ void LAMMPS::writePositionAndVelocity(const shared_ptr<Bead>& bead,
 }
 
 void LAMMPS::writeBondAndAngle(const shared_ptr<Bead>& bead,
-			       map< shared_ptr<Bead>, int >& beadIndexMap,
-			       map< shared_ptr<Bead::Bond>, int >& bondIndexMap,
-			       map< shared_ptr<Bead::Angle>, int >& angleIndexMap,
+			       map<shared_ptr<Bead>,int>& beadIndexMap,
+			       map<shared_ptr<Bond>,int>& bondIndexMap,
+			       map<shared_ptr<Angle>,int>& angleIndexMap,
 			       stringstream& bondWriter,
 			       stringstream& angleWriter,
 			       int& bondIndexCount, int& angleIndexCount){
-  vector< shared_ptr<Bead::Bond> > bondList = bead->getBonds();
-  vector< shared_ptr<Bead::Angle> > angleList = bead->getAngles();
+  vector<shared_ptr<Bond> > bondList = bead->getBonds();
+  vector<shared_ptr<Angle> > angleList = bead->getAngles();
   
   for (auto const& bond : bondList){
     if (bondIndexMap.count(bond) == 0){

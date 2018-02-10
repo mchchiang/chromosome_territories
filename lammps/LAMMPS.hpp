@@ -1,7 +1,7 @@
-// LAMMPS.h
+// LAMMPS.hpp
 
-#ifndef LAMMPS_H
-#define LAMMPS_H
+#ifndef LAMMPS_HPP
+#define LAMMPS_HPP
 
 #include <map>
 #include <vector>
@@ -9,8 +9,8 @@
 #include <sstream>
 #include <memory>
 #include <string>
-#include "Polymer.h"
-#include "Bead.h"
+#include "Polymer.hpp"
+#include "Bead.hpp"
 
 using std::map;
 using std::string;
@@ -21,8 +21,8 @@ using std::stringstream;
 class LAMMPS {
   
 private:
-  map< int, shared_ptr<Polymer> > polymers {};
-  map< int, shared_ptr<Bead> > beads {};
+  map<int,shared_ptr<Polymer> > polymers {};
+  map<int,shared_ptr<Bead> > beads {};
   
   // Box size
   double lx {};
@@ -42,28 +42,28 @@ private:
   bool readBoxSize(ifstream& reader);
 
   bool readPosition(ifstream& reader, int& numOfBeads,
-		    map< int, shared_ptr<Bead> >& beadIndexMap);
+		    map<int,shared_ptr<Bead> >& beadIndexMap);
   bool readVelocity(ifstream& reader, int& numOfBeads,
-		    map< int, shared_ptr<Bead> >& beadIndexMap);
+		    map<int,shared_ptr<Bead> >& beadIndexMap);
 
   bool readBond(ifstream& reader, int& numOfBonds,
-		map< int, shared_ptr<Bead> >& beadIndexMap);
+		map<int,shared_ptr<Bead> >& beadIndexMap);
   
   bool readAngle(ifstream& reader, int& numOfAngles,
-		 map< int, shared_ptr<Bead> >& beadIndexMap);
+		 map<int,shared_ptr<Bead> >& beadIndexMap);
 
   void readInputMap(ifstream& reader,
-		    map< int, shared_ptr<Bead> >& beadIndexMap);
+		    map<int,shared_ptr<Bead> >& beadIndexMap);
 
   void writePositionAndVelocity(const shared_ptr<Bead>& bead,
-				map< shared_ptr<Bead>, int >& beadIndexMap,
+				map<shared_ptr<Bead>,int >& beadIndexMap,
 				stringstream& positionWriter,
 				stringstream& velocityWriter,
 				int& beadIndexCount);
   void writeBondAndAngle(const shared_ptr<Bead>& bead,
-			 map< shared_ptr<Bead>, int >& beadIndexMap,
-			 map< shared_ptr<Bead::Bond>, int >& bondIndexMap,
-			 map< shared_ptr<Bead::Angle>, int >& angleIndexMap,
+			 map< shared_ptr<Bead>,int >& beadIndexMap,
+			 map< shared_ptr<Bond>,int >& bondIndexMap,
+			 map< shared_ptr<Angle>,int >& angleIndexMap,
 			 stringstream& bondWriter,
 			 stringstream& angleWriter,
 			 int& bondIndexCount, int& angleIndexCount);

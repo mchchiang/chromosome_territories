@@ -1,11 +1,11 @@
-// Polymer.h
+// Polymer.hpp
 
-#ifndef POLYMER_H
-#define POLYMER_H
+#ifndef POLYMER_HPP
+#define POLYMER_HPP
 
 #include <vector>
 #include <memory>
-#include "Bead.h"
+#include "Bead.hpp"
 
 using std::vector;
 using std::shared_ptr;
@@ -13,7 +13,7 @@ using std::shared_ptr;
 class Polymer {
 
 private:
-  vector< shared_ptr<Bead> > beads {};
+  vector<shared_ptr<Bead> > beads {};
 
 public:
   // Constructor
@@ -26,7 +26,7 @@ public:
 
   // Accessor methods
   shared_ptr<Bead> getBead(int id);
-  vector< shared_ptr<Bead> >& getBeads();
+  vector<shared_ptr<Bead> >& getBeads();
 
   int getNumOfBeads();
 
@@ -47,6 +47,12 @@ public:
 						     double z, double lx, 
 						     double ly, double lz);
 
+  static shared_ptr<Polymer> createRosettePolymer(int numOfBeads, 
+						  int beadType,
+						  double x, double y,
+						  double z, double lx, 
+						  double ly, double lz);
+  
 };
 
 #endif

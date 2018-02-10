@@ -5,8 +5,11 @@
 #include <memory>
 #include <cstdlib>
 #include <cmath>
-#include "Bead.h"
-#include "Polymer.h"
+#include <armadillo>
+#include "Bead.hpp"
+#include "Bond.hpp"
+#include "Angle.hpp"
+#include "Polymer.hpp"
 
 using std::cout;
 using std::endl;
@@ -30,7 +33,7 @@ Polymer::Polymer(int nBeads, int beadType,
       bead->setType(beadType);
       beads.push_back(bead);
       i++;
-	
+      
       if (i < nBeads){
 	bead = make_shared<Bead>();
 	bead->setType(beadType);
@@ -63,7 +66,7 @@ shared_ptr<Bead> Polymer::getBead(int id){
   return beads[id];
 }
 
-vector< shared_ptr<Bead> >& Polymer::getBeads(){
+vector<shared_ptr<Bead> >& Polymer::getBeads(){
   return beads;
 }
 
@@ -84,8 +87,8 @@ void Polymer::removeBead(int id){
   // Find the bond and angle type with neighbouring bead
   int bondType {1};
   int angleType {1};
-  shared_ptr<Bead::Bond> bond {}; 
-  shared_ptr<Bead::Angle> angle {};
+  shared_ptr<Bond> bond {}; 
+  shared_ptr<Angle> angle {};
   int bead1Index {id+1};
   int bead2Index {id+2};
 
@@ -152,7 +155,7 @@ shared_ptr<Polymer> Polymer::createRandomWalkPolymer(int nBeads, int beadType,
 						     double x0, double y0, 
 						     double z0, double lx, 
 						     double ly, double lz){
-  // Initialise random number generator
+  // Initialise the random number generator
   srand(time(NULL));
   double pi {M_PI};
   shared_ptr<Polymer> polymer = make_shared<Polymer>(nBeads, beadType);
@@ -184,4 +187,54 @@ shared_ptr<Polymer> Polymer::createRandomWalkPolymer(int nBeads, int beadType,
 	previous = current;
   }
   return polymer;
+}
+
+shared_ptr<Polymer> Polymer::createRosettePolymer(int nBeads, int beadType,
+						  doube beadsPerTurn, 
+						  double r, double a, double k,
+						  double x0, double y0,
+						  double z0, double lx,
+						  double ly, double lz){
+  // Initialise the random number generator
+  srand(time(NULL));
+  double pi {M_PI};
+  shared_ptr<Polymer> polymer = make_shared<Polymer>(nBeads, beadType);
+  double tInc = beadsPerTurn / (2.0*pi);
+  
+  
+
+  return nullptr;
+}
+
+
+mat randRotation(double x1, double x2, double x3){
+  const double pi2 {M_PI*2};
+  double theta = x1 * pi2; // Rotation about the pole (Z)
+  double phi = x2 * pi2; // Direction of pole deflection
+  double z = x3 * 2.0; // Magnitude of pole deflection
+
+  double r = sqrt(z);
+  double vx = cos(phi) * r;
+  double vy = sin(phi) * r;
+  double vz = sqrt(2.0 - z);
+
+  double st = sin(theta);
+  double ct = cos(theta);
+  double sx = vx * ct - vy * st;
+  double sy = vx * st + vy * ct;
+
+  // Construct the rotation matrix
+  mat rotation(3,3);
+  rotation.at(0,0) = vx * sx - ct;
+  rotation.at(0,1) = vx * sy - st;
+  rotation.at(0,2) = vx * vz;
+  
+  rotation.at(1,0) = vy * sx + st;
+  rotation.at(1,1) = vy * sy - ct;
+  rotation.at(1,2) = vy * vz;
+  
+  rotation.at(2,0) = vz * sx;
+  rotation.at(2,1) = vz * sy;
+  rotation.at(2,2) = 1.0 - z;
+  return rotation;
 }
