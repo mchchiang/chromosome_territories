@@ -11,10 +11,10 @@
 #include <memory>
 #include <cstdlib>
 #include <cmath>
-#include "../lammps/Bead.h"
-#include "../lammps/Polymer.h"
-#include "../lammps/LAMMPS.h"
-#include "../lammps/DataManager.h"
+#include "Bead.hpp"
+#include "Polymer.hpp"
+#include "LAMMPS.hpp"
+#include "DataManager.hpp"
 
 using std::cout;
 using std::cin;

@@ -11,10 +11,10 @@
 #include <memory>
 #include <cstdlib>
 #include <cmath>
-#include "../lammps/Bead.h"
-#include "../lammps/Polymer.h"
-#include "../lammps/LAMMPS.h"
-#include "../lammps/DataManager.h"
+#include "Bead.hpp"
+#include "Polymer.hpp"
+#include "LAMMPS.hpp"
+#include "DataManager.hpp"
 
 using std::cout;
 using std::cin;
@@ -75,8 +75,8 @@ int main(int argc, char * argv[]){
   }
 
   // Create vectors for storing laminar contact and heterochromatic region
-  vector< vector<double> > fracOfLam {};
-  vector< vector<double> > fracOfHet {};
+  vector<vector<double> > fracOfLam {};
+  vector<vector<double> > fracOfHet {};
 
   for (int i {}; i < numOfFibres; i++){
     vector<double> vec (fibreLength[i], 0.0);

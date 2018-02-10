@@ -10,10 +10,10 @@
 #include <string>
 #include <memory>
 #include <cmath>
-#include "../lammps/LAMMPS.h"
-#include "../lammps/Polymer.h"
-#include "../lammps/Bead.h"
-#include "../lammps/DataManager.h"
+#include "LAMMPS.hpp"
+#include "Polymer.hpp"
+#include "Bead.hpp"
+#include "DataManager.hpp"
 
 using std::cout;
 using std::cin;
