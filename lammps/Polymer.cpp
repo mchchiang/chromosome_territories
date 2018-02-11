@@ -172,10 +172,10 @@ shared_ptr<Polymer> Polymer::createRandomWalkPolymer(int nBeads, int beadType,
   for (int i {1}; i < nBeads; i++){
     current = polymer->getBead(i);
     do {
-      r = static_cast<double>(rand())/static_cast<double>(RAND_MAX);
+      r = getRand();
       costheta = 1.0-2.0*r;
       sintheta = sqrt(1-costheta*costheta);
-      r = static_cast<double>(rand())/static_cast<double>(RAND_MAX);
+      r = getRand();
       phi = 2.0*pi*r;
       x = previous->getPosition(0) + sintheta * cos(phi);
       y = previous->getPosition(1) + sintheta * sin(phi);
@@ -190,7 +190,7 @@ shared_ptr<Polymer> Polymer::createRandomWalkPolymer(int nBeads, int beadType,
 }
 
 shared_ptr<Polymer> Polymer::createRosettePolymer(int nBeads, int beadType,
-						  doube beadsPerTurn, 
+						  int beadsPerTurn, 
 						  double r, double a, double k,
 						  double x0, double y0,
 						  double z0, double lx,
@@ -201,9 +201,74 @@ shared_ptr<Polymer> Polymer::createRosettePolymer(int nBeads, int beadType,
   shared_ptr<Polymer> polymer = make_shared<Polymer>(nBeads, beadType);
   double tInc = beadsPerTurn / (2.0*pi);
   
-  
+  // Determine height of rosette cylinder
+  double height = nBeads / static_cast<double>(beadsPerTurn);
 
-  return nullptr;
+  const vec centre {x0, y0, z0};
+
+  // Generate random orientation
+  bool outOfBound {true};
+  double x1, x2, x3;
+  mat rotate (3,3, fill::zeros);
+  vec pos {0.0, 0.0, -height/2.0}; // Position in rotated frame
+  double xlo {-lx/2.0}, xhi {lx/2.0};
+  double ylo {-ly/2.0}, yhi {ly/2.0};
+  double zlo {-lz/2.0}, zhi {lz/2.0};
+  vec origin;
+  
+  while (outOfBound){
+	outOfBound = false;
+	// Gernerate random number
+	x1 = getRand();
+	x2 = getRand();
+	x3 = getRand();
+
+	// Generate rotation
+	rotate = randRotation(x1, x2, x3);
+	pos = rotate * pos; // Position in the lab frame
+	origin = pos;
+	
+	// Check that the bottom rosette is within the box
+	for (int i {}; i < beadsPerTurn; i++){
+	  if (pos(0) < xlo || pos(0) > xhi ||
+		  pos(1) < ylo || pos(1) > yhi ||
+		  pos(2) < zlo || pos(2) > zhi){
+		outOfBound = true;
+		break;
+	  }
+	  pos = (rotate * rosette(r, a, k, p, i*tInc)) + origin;
+	}
+  }
+  
+  pos = origin;
+  shared_ptr<Bead> bead {};
+
+  for (int i {}; i < nBeads; i++){
+	bead = polymer->getBead(i);
+	// Set bead position
+	bead->setPosition(0, pos(0));
+	bead->setPosition(1, pos(1));
+	bead->setPosition(2, pos(2));
+	// Get next bead position
+	pos = (rotate * rosette(r, a, k, p, i*tInc)) + origin;
+  }
+  return polymer;
+}
+
+double getRand(){
+  return static_cast<double>(rand())/static_cast<double>(RAND_MAX);
+}
+
+// Define the rosette vector
+vec rosette(const double& r, const double& a, const double& k, 
+			const double& p, const double& t){
+  vec v (3);
+  double cos2kt = cos(k*t); 
+  cos2kt *= cos2kt;
+  v(0) = r*(a+(1-a)*cos2kt*cos(t));
+  v(1) = r*(a+(1-a)*cos2kt*sin(t));
+  v(2) = p*t/2.0/pi;
+  return v;
 }
 
 
@@ -220,16 +285,16 @@ mat randRotation(double x1, double x2, double x3){
 
   double st = sin(theta);
   double ct = cos(theta);
-  double sx = vx * ct - vy * st;
-  double sy = vx * st + vy * ct;
+  double sx = vx * ct + vy * st;
+  double sy = vy * ct - vx * st;
 
   // Construct the rotation matrix
   mat rotation(3,3);
   rotation.at(0,0) = vx * sx - ct;
-  rotation.at(0,1) = vx * sy - st;
+  rotation.at(0,1) = vx * sy + st;
   rotation.at(0,2) = vx * vz;
   
-  rotation.at(1,0) = vy * sx + st;
+  rotation.at(1,0) = vy * sx - st;
   rotation.at(1,1) = vy * sy - ct;
   rotation.at(1,2) = vy * vz;
   
