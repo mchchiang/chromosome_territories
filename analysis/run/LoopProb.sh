@@ -37,7 +37,7 @@ do
 	do
 	    echo "Calculating contact fraction for HH = ${ehh} HL = ${ehl} run = ${run}"
 
-	    name="cluster_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}_run_${run}"
+	    name="sene_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}_run_${run}"
 	    pos_file="${dir}/pos_${name}.dat"
 	    loop_file="${dir}/loop-prob_${name}.dat"
 

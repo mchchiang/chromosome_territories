@@ -24,7 +24,7 @@ do
     do
 	echo "Fitting loop prob exponent for HH = ${ehh} HL = ${ehl}"
 
-	name="cluster_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
+	name="sene_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
 	file="${dir}/loop-prob_${name}_avg.dat"
 
 	fitparameters=$( echo "

@@ -62,7 +62,7 @@ e_ladlad_norm=$(python -c "print '%.13f' % ($e_ladlad/$norm)")
 e_ladlam_norm=$(python -c "print '%.13f' % ($e_ladlam/$norm)")
 
 # Set output file names
-sim_name="Sene_NLAM_${lam_atoms}_run_${run}"
+sim_name="sene_NLAM_${lam_atoms}_run_${run}"
 init_file="init_${sim_name}.in"
 restart_file="restart_${sim_name}"
 prep1_outfile="prep1_${sim_name}.lammpstrj"

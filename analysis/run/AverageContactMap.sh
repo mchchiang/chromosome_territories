@@ -36,7 +36,7 @@ do
     ehl=$(python -c "print '%.1f' % ($ehl_start)")
     while (( $(bc <<< "$ehl < $ehl_end") ))
     do
-	name="cluster_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
+	name="sene_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
 	pos_file="${dir}/pos_${name}"*.dat
 	contact_file="${dir}/contact_${name}_avg.dat"
 	cmd[$jobid]="$contact_exe $N $L $L $L $rc $block $colour $tstart $tend $tinc $contact_file ${pos_file}"
@@ -47,20 +47,22 @@ do
     ehh=$(python -c "print '%.1f' % ($ehh + $ehh_inc)")
 done
 
-
+source 'Run.sh'
+run_cmd
 
 # Parallel runs
 
-total_jobs=$jobid
-jobid=0
+#total_jobs=$jobid
+#jobid=0
 
-while (( $(bc <<< "$jobid < $total_jobs") ))
-do
-    for (( i=0; i<$max_jobs && $jobid < $total_jobs; i++))
-    do
-	echo "${cmd[jobid]} &"
-	${cmd[jobid]} &
-	jobid=$(bc <<< "$jobid + 1")
-    done
-    wait
-done
+#while (( $(bc <<< "$jobid < $total_jobs") ))
+#do
+#    for (( i=0; i<$max_jobs && $jobid < $total_jobs; i++))
+#    do
+#	echo "${cmd[jobid]} &"
+#	${cmd[jobid]} &
+#	jobid=$(bc <<< "$jobid + 1")
+#    done
+#    wait
+#done
+

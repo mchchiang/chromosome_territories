@@ -30,7 +30,7 @@ do
     ehl=$(python -c "print '%.1f' % ($ehl_start)")
     while (( $(bc <<< "$ehl < $ehl_end") ))
     do
-	name="cluster_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
+	name="sene_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
 	for (( run=$run_start; $run<=$run_end; run+=$run_inc ))
 	do
 	    echo "Selecting beads for HH = ${ehh} HL = ${ehl} run = ${run}"

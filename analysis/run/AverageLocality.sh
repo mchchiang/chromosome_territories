@@ -44,7 +44,7 @@ do
     while (( $(bc <<< "$ehl < $ehl_end") ))
     do
 	echo "Averaging HH = ${ehh} HL = ${ehl}"
-	file="${dir}/locality_cluster_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
+	file="${dir}/locality_sene_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
 	python $average_py -1 2 -1 -1 ${file}_avg.dat ${file}*.dat
 	data=$(cat ${file}_avg.dat)
 	echo "${ehh} ${ehl} ${data}" >> $avg_file

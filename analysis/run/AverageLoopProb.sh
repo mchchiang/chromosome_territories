@@ -23,7 +23,7 @@ do
     do
 	echo "Averaging loop prob for HH = ${ehh} HL = ${ehl}"
 
-	name="cluster_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
+	name="sene_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
 	file="${dir}/loop-prob_${name}"
 	
 	python $average_py 0 1 -1 -1 ${file}_avg.dat ${file}_run*.dat

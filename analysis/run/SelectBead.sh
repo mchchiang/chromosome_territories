@@ -37,7 +37,7 @@ do
 	do
 	    echo "Selecting beads for HH = ${ehh} HL = ${ehl} run = ${run}"
 
-	    name="cluster_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}_run_${run}"
+	    name="sene_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}_run_${run}"
 	    lammps_file="${dir}/end_${name}.out"
 	    map_file="${dir}/${name}.lammpsmap"
 	    out_file="${dir}/selected_pos_${name}.dat"

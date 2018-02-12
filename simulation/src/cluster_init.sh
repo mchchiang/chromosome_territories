@@ -6,12 +6,18 @@
 e_hethet=$1       # HH interaction
 e_hetlam=$2       # HL interaction
 run=$3            # trial number
-run_dir=$4        # run directory
+init_mode=$4      # rosette-like or random starting config
+run_dir=$5        # run directory
 
-gen_chromo_exe="../exe/Gen_Chr_Het"
-chromo_file="../data/chromo_length.dat"
-lam_file="../data/LAD.Pk.genome.full.dat"
-het_file="../data/GM12878.H3K9me3.Pk.full.dat"
+# Init config (default is random walk)
+gen_chromo_exe="../bin/exe/Gen_Chr_Het"
+if [ $init_mode == "rosette" ]; then
+    gen_chromo_exe="../bin/exe/Gen_Rosette"
+fi
+
+chromo_file="../../data/chromo_length.dat"
+lam_file="../../data/LAD.Pk.genome.full.dat"
+het_file="../../data/GM12878.H3K9me3.Pk.full.dat"
 chr_num=20
 
 init_box_size=100
@@ -32,17 +38,17 @@ restart_freq=1000
 
 prep1_printfreq=1000
 prep1_seed=$(python GetRandom.py $max_seed)
-prep1_time_1=4000
-prep1_time_2=4000
-prep1_time_3=2000
+prep1_time_1=10000 # 4000
+prep1_time_2=10000 # 4000
+prep1_time_3=10000 # 2000
 
 prep2_printfreq=1000
 prep2_seed=$(python GetRandom.py $max_seed)
-prep2_time=5000
+prep2_time=5000 # 5000
 
 prep3_printfreq=1000
 prep3_seed=$(python GetRandom.py $max_seed)
-prep3_time=5000
+prep3_time=5000 # 5000
 
 run_printfreq=1000
 run1_seed=$(python GetRandom.py $max_seed)
@@ -75,7 +81,7 @@ e_hethet_norm=$(python -c "print '%.13f' % ($e_hethet/$norm)")
 e_hetlam_norm=$(python -c "print '%.13f' % ($e_hetlam/$norm)")
 
 # Set output file names
-sim_name="cluster_chr_${chr_num}_L_${box_size}_HH_${e_hethet}_HL_${e_hetlam}_run_${run}"
+sim_name="sene_chr_${chr_num}_L_${box_size}_HH_${e_hethet}_HL_${e_hetlam}_run_${run}"
 init_file="init_${sim_name}.in"
 restart_file="restart_${sim_name}"
 prep1_outfile="prep1_${sim_name}.lammpstrj"

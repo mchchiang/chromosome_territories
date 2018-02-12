@@ -26,7 +26,7 @@ do
     while (( $(bc <<< "$ehl < $ehl_end") ))
     do
 	echo "Calculating prob. for HH = ${ehh} HL = ${ehl}"
-	name="cluster_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
+	name="sene_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
 	pos_file="${dir}/selected_pos_${name}"
 	out_file="${dir}/wall-prob_${name}.dat"
 	python $prob_py $wall_pos $min_val $max_val $binsize $out_file ${pos_file}*.dat

@@ -9,7 +9,8 @@ ehl_inc=$6
 run_start=$7
 run_end=$8
 run_inc=$9
-dir=${10}
+init_mode=${10}
+dir=${11}
 
 ehh=$ehh_start
 ehl=$ehl_start
@@ -23,7 +24,7 @@ do
 	for (( run=$run_start; $run<=$run_end; run+=$run_inc ))
 	do
 	    echo "Creating files for HH = $ehh HL = $ehl run = $run"
-	    bash cluster_init.sh $ehh $ehl $run $dir
+	    bash cluster_init.sh $ehh $ehl $run $init_mode $dir
 	done
 	ehl=$(python -c "print '%.1f' % ($ehl + $ehl_inc)")
     done
