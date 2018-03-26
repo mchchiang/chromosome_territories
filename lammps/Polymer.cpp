@@ -16,6 +16,12 @@ using std::endl;
 using std::vector;
 using std::shared_ptr;
 using std::make_shared;
+using namespace arma;
+
+double getRand();
+vec rosette(const double& r, const double& a, const double& k, 
+	    const double& p, const double& t);
+mat randRotation(double x1, double x2, double x3);
 
 // Constructors
 Polymer::Polymer(int nBeads, int beadType, 
@@ -191,7 +197,8 @@ shared_ptr<Polymer> Polymer::createRandomWalkPolymer(int nBeads, int beadType,
 
 shared_ptr<Polymer> Polymer::createRosettePolymer(int nBeads, int beadType,
 						  int beadsPerTurn, 
-						  double r, double a, double k,
+						  double r, double a,
+						  double k, double p,
 						  double x0, double y0,
 						  double z0, double lx,
 						  double ly, double lz){
@@ -261,8 +268,9 @@ double getRand(){
 
 // Define the rosette vector
 vec rosette(const double& r, const double& a, const double& k, 
-			const double& p, const double& t){
+	    const double& p, const double& t){
   vec v (3);
+  const double pi {M_PI};
   double cos2kt = cos(k*t); 
   cos2kt *= cos2kt;
   v(0) = r*(a+(1-a)*cos2kt*cos(t));
