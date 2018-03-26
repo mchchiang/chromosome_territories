@@ -31,16 +31,16 @@ int main(int argc, char * argv[]){
     cout << "Not enough arguments! Generation aborted." << endl;
   }
 
-  string chromoFile {argv[1]};
-  string lamFile {argv[2]};
-  string hetFile {argv[3]};
+  string chromoFile (argv[1]);
+  string lamFile (argv[2]);
+  string hetFile (argv[3]);
   int chrNum = stoi(string(argv[4]), nullptr, 10); // Between 1 and 46
   double lx = stod(string(argv[5]), nullptr);
   double ly = stod(string(argv[6]), nullptr);
   double lz = stod(string(argv[7]), nullptr);
   double buffer = stod(string(argv[8]), nullptr);
-  string outFile {argv[9]};
-  string outMapFile {argv[10]};
+  string outFile (argv[9]);
+  string outMapFile (argv[10]);
 
 
   const int haploidNum {23}; // For human
@@ -93,7 +93,8 @@ int main(int argc, char * argv[]){
   if (!readOK) return 1;
 
   // Read H3K9me3 (heterochromatin) file
-  readOK = dataMan.getFracContent(hetFile, fracOfHet, 1, 0, 1, 2, 3, 5, 10);
+  //  readOK = dataMan.getFracContent(hetFile, fracOfHet, 1, 0, 1, 2, 3, 5, 10);
+  readOK = dataMan.getFracContent(hetFile, fracOfHet, 0, 0, 0, 1, 2, 4, 10);
   if (!readOK) return 1;
 
   // Generate polymer
@@ -101,7 +102,7 @@ int main(int argc, char * argv[]){
   shared_ptr<Polymer> polymer {};
   shared_ptr<Bead> bead {};
   
-  lammps->setTypesOfBeads(3);
+  lammps->setTypesOfBeads(4);
   lammps->setTypesOfBonds(1);
   lammps->setTypesOfAngles(1);
 

@@ -9,6 +9,10 @@ run=$3            # trial number
 init_mode=$4      # rosette-like or random starting config
 run_dir=$5        # run directory
 
+# Interaction energy for euchromatin and centromere region
+e_eueu=0.4
+e_cent=0.4
+
 # Init config (default is random walk)
 gen_chromo_exe="../bin/exe/Gen_Chr_Het"
 if [ $init_mode == "rosette" ]; then
@@ -17,7 +21,7 @@ fi
 
 chromo_file="../../data/chromo_length.dat"
 lam_file="../../data/LAD.Pk.genome.full.dat"
-het_file="../../data/GM12878.H3K9me3.Pk.full.dat"
+het_file="../../data/IMR90.H3K9me3.Pk.full.dat"
 chr_num=20
 
 init_box_size=100
@@ -38,9 +42,9 @@ restart_freq=1000
 
 prep1_printfreq=1000
 prep1_seed=$(python GetRandom.py $max_seed)
-prep1_time_1=10000 # 4000
-prep1_time_2=10000 # 4000
-prep1_time_3=10000 # 2000
+prep1_time_1=4000 # 4000
+prep1_time_2=4000 # 4000
+prep1_time_3=2000 # 2000
 
 prep2_printfreq=1000
 prep2_seed=$(python GetRandom.py $max_seed)
@@ -79,6 +83,8 @@ norm=$(python -c "print '%.13f' % (1.0 + 4.0*(($sigma/$cutoff)**12-($sigma/$cuto
 
 e_hethet_norm=$(python -c "print '%.13f' % ($e_hethet/$norm)")
 e_hetlam_norm=$(python -c "print '%.13f' % ($e_hetlam/$norm)")
+e_eueu_norm=$(python -c "print '%.13f' % ($e_eueu/$norm)")
+e_cent_norm=$(python -c "print '%.13f' % ($e_cent/$norm)")
 
 # Set output file names
 sim_name="sene_chr_${chr_num}_L_${box_size}_HH_${e_hethet}_HL_${e_hetlam}_run_${run}"
@@ -178,6 +184,8 @@ sed -i -- "s/ESOFT/${e_soft}/g" $file
 
 sed -i -- "s/EHETHET/${e_hethet_norm}/g" $file
 sed -i -- "s/EHETLAM/${e_hetlam_norm}/g" $file
+sed -i -- "s/EEUEU/${e_eueu_norm}/g" $file
+sed -i -- "s/ECENT/${e_cent_norm}/g" $file
 
 sed -i -- "s/SIGMA/${sigma}/g" $file
 
@@ -190,3 +198,7 @@ sed -i -- "s/RUN1_SIMFILE/${run1_simfile}/g" $file
 # Generate chromatin
 
 ${gen_chromo_exe} $chromo_file $lam_file $het_file $chr_num $init_box_size $init_box_size $init_box_size $buffer "${run_dir}/${init_file}" "${run_dir}/${map_file}"
+
+# Relabel centromere region
+awk '{if (NR>2663&&NR<2965) {$3=4; print} else {print}}' ${run_dir}/${init_file} > ${run_dir}/temp
+mv ${run_dir}/temp ${run_dir}/${init_file}

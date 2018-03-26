@@ -332,6 +332,11 @@ if "EHETHET > 0.0" then &
    "pair_coeff 2 2 EHETHET SIGMA CUTOFF"
 if "EHETLAM > 0.0" then &
    "pair_coeff 2 3 EHETLAM SIGMA CUTOFF"
+if "EEUEU > 0.0" then &
+   "pair_coeff 1 1 EEUEU SIGMA CUTOFF"
+if "ECENT > 0.0" then &
+   "pair_coeff 4 4 ECENT SIGMA CUTOFF"
+
 
 # No interaections for lamin beads
 pair_coeff 3 3 0.0 0.0 0.0 
