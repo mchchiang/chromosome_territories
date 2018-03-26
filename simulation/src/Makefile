@@ -1,8 +1,8 @@
 
 CXX := g++
-CXXFLAGS := -O3 -Wall -Wshadow -std=c++11
+CXXFLAGS := -O3 -Wall -Wshadow -std=c++11 -larmadillo
 INC = -I../../lammps/
-LDFLAGS := 
+LDFLAGS := -larmadillo
 
 PRG_SUFFIX_FLAG := 0
 
