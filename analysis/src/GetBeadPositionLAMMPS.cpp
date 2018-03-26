@@ -10,9 +10,11 @@
 #include <string>
 #include <vector>
 #include <cmath>
-#include "../lammps/LAMMPS.h"
-#include "../lammps/Polymer.h"
-#include "../lammps/Bead.h"
+#include "LAMMPS.hpp"
+#include "Polymer.hpp"
+#include "Bead.hpp"
+#include "Angle.hpp"
+#include "Bond.hpp"
 
 using std::cout;
 using std::endl;
