@@ -10,6 +10,7 @@
 #include <memory>
 #include <armadillo>
 #include "ContactMapLib.hpp"
+#include "PositionReader.hpp"
 
 using std::cout;
 using std::endl;
@@ -64,6 +65,46 @@ CMap ContactMap::createFromMatrixFile(int n, bool full,
 
 
 void ContactMap::importFromPosFile(int numOfBeads, 
+				   double lx, double ly, double lz,
+				   double cutoff, string contactType,
+				   int startTime, int endTime, int timeInc,
+				   string file){
+  PositionReader reader;
+  reader.open(file, numOfBeads, lx, ly, lz, timeInc);
+  if (!reader.isOpen()){
+    return;
+  }
+
+  // Reset the contact map
+  reset(numOfBeads);
+
+  int count {};
+  long time {};
+  while(reader.nextFrame()){
+    time = reader.getTime();
+    if (time >= startTime && time <= endTime){
+      if (contactType == "colour"){
+	computeColourContact(cutoff, reader);
+      } else {
+	computeContact(cutoff, reader);
+      }
+      count++;
+    } else if (time > endTime) {
+      break;
+    }
+  }
+  reader.close();
+  // Normalise contact map
+  for (int i {}; i < numOfBeads; i++){
+    for (int j {}; j < numOfBeads; j++){
+      set(i, j, get(i, j) / count);
+    }
+  }
+}
+
+
+
+/*void ContactMap::importFromPosFile(int numOfBeads, 
 				   double lx, double ly, double lz,
 				   double cutoff, string contactType,
 				   int startTime, int endTime, int timeInc,
@@ -143,7 +184,7 @@ void ContactMap::importFromPosFile(int numOfBeads,
   // Delete resources
   delete position;
   delete type;
-}
+  }*/
 
 void ContactMap::importFromMatrixFile(int n, bool full, string file){
   ifstream reader;
@@ -202,6 +243,43 @@ void ContactMap::importFromArray(vector<vector<double> >* matrix){
 }
 
 // Compute normal contact
+void ContactMap::computeContact(double cutoff, const PositionReader& reader){
+  cout << "Computing contacts" << endl;
+  double dx, dy, dz;
+  for (int i {}; i < size; i++){
+    set(i, i, get(i, i) + 1.0);
+    for (int j {}; j < i; j++){
+      dx = reader.getUnwrappedPosition(i,0) - reader.getUnwrappedPosition(j,0);
+      dy = reader.getUnwrappedPosition(i,1) - reader.getUnwrappedPosition(j,1);
+      dz = reader.getUnwrappedPosition(i,2) - reader.getUnwrappedPosition(j,2);
+      if (inContact(distance(dx,dy,dz),cutoff)){
+	set(i, j, get(i, j) + 1.0);
+	set(j, i, get(j, i) + 1.0);
+      }
+    }
+  }
+}
+
+
+// Compute colour contact
+void ContactMap::computeColourContact(double cutoff, const PositionReader& reader){
+  double dx, dy, dz;
+  for (int i {}; i < size; i++){
+    set(i, i, get(i, i) + 1.0);
+    for (int j {}; j < i; j++){
+      dx = reader.getUnwrappedPosition(i,0) - reader.getUnwrappedPosition(j,0);
+      dy = reader.getUnwrappedPosition(i,1) - reader.getUnwrappedPosition(j,1);
+      dz = reader.getUnwrappedPosition(i,2) - reader.getUnwrappedPosition(j,2);
+      if (inContact(distance(dx,dy,dz),cutoff)){
+	set(i, j, get(i, j) + 1.0);
+	set(j, i, get(j, i) + 1.0);
+      }
+    }
+  }
+}
+
+/*
+// Compute normal contact
 void ContactMap::computeContact(double cutoff,
 				vector<vector<double> >* position){
   double dx, dy, dz;
@@ -238,7 +316,7 @@ void ContactMap::computeColourContact(double cutoff,
     }
   }
 }
-
+*/
 
 // Determine if in contact
 bool inContact(double distance, double cutoff){

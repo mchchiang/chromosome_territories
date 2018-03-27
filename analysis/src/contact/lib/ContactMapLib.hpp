@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <armadillo>
+#include "PositionReader.hpp"
 
 using std::string;
 using std::vector;
@@ -32,9 +33,11 @@ private:
   ContactMap(int n, int value = 0.0);
   
   // Helper methods for computing contacts
-  void computeContact(double cutoff, vector< vector<double> >* position);
+  /*  void computeContact(double cutoff, vector< vector<double> >* position);
   void computeColourContact(double cutoff, vector< vector<double> >* position, 
-			   vector<int>* type);
+  vector<int>* type);*/
+  void computeContact(double cutoff, const PositionReader& reader);
+  void computeColourContact(double cutoff, const PositionReader& reader);
 
 public:
   // Static factory methods
