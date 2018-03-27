@@ -1,15 +1,23 @@
-// AverageContactMap.cpp
+/* AverageContactMap.cpp
+ *
+ * A program that computes the contact matrix averaged over time
+ * and over different LAMMPS dump/position files.
+ */
 
 #include <iostream>
+#include <string>
 #include "ContactMapLib.hpp"
 
 using std::cout;
 using std::endl;
+using std::string;
 
 int main(int argc, char* argv[]){
 
   if (argc < 13){
-    cout << "Not enough arguments! Process aborted." << endl;
+    cout << "Usage: [numOfBeads] [lx] [ly] [lz] [cutoff] [block] "
+	 << "[contactType=normal/colour] [startTime] [endTime] [timeInc] "
+	 << "[contactFile] [posFiles...]" << endl;
     return 1;
   }
 

@@ -1,9 +1,8 @@
-/* CorrelationMatrix.cpp
+/* LinearNorm.cpp
  *
- * A program that creates a Pearson's correlation matrix 
- * from a contact map that is normalised by the linear
- * contact probability (the contact probability as a 
- * function of linear genome distance).
+ * A program that normalises the contact matrix by the
+ * contact probability as a function of the linear 
+ * genome distance P(l).
  */
 
 #include <iostream>
@@ -33,6 +32,5 @@ int main(int argc, char* argv[]){
 
   CMap map = ContactMap::createFromMatrixFile(numOfBeads, full, matrixFile);
   map->linearProbNorm();
-  map->convertToCorrelation();
   map->exportToFile(true, true, true, outFile);
 }

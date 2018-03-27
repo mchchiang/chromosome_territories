@@ -7,9 +7,9 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <memory>
 #include <vector>
 #include <string>
-#include <memory>
 #include "ContactMapLib.hpp"
 
 using std::cout;
@@ -23,7 +23,8 @@ using std::ofstream;
 int main(int argc, char* argv[]){
 
   if (argc < 5){
-    cout << "Not enough arguments! Process aborted." << endl;
+    cout << "Usage: [numOfBeads] [mode=full/upper] "
+	 << "[matrixFile] [outFile]" << endl;
     return 1;
   }
 

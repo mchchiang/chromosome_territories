@@ -2,7 +2,7 @@
  *
  * Find the largest eigenvalue and the corresponding eigenvector
  * of a contact matrix (that is normalised by the linear genome
- * contact probability) - i.e. the correlation matrix
+ * contact probability) - i.e. the correlation matrix.
  */
 
 #include <iostream>
@@ -24,7 +24,8 @@ using std::ofstream;
 int main(int argc, char* argv[]){
 
   if (argc < 5){
-    cout << "Not enough arguments! Process aborted." << endl;
+    cout << "Usage: [numOfBeads] [mode=full/upper] "
+	 << "[matrixFile] [outFile]" << endl;
     return 1;
   }
 

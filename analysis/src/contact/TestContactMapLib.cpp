@@ -98,9 +98,9 @@ BOOST_AUTO_TEST_CASE(TestCreateFromPosFile){
   vector< vector<double>> expect
     {
       {1, 1, 0, 0, 0},
-      {1, 1, 1, 1, 0},
-      {0, 1, 1, 0, 1},
-      {0, 1, 0, 1, 0},
+      {1, 1, 0, 0, 0},
+      {0, 0, 1, 0, 1},
+      {0, 0, 0, 1, 0},
       {0, 0, 1, 0, 1}
     };
   for (int i {}; i < numOfBeads; i++){
