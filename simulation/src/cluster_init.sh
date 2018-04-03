@@ -10,7 +10,7 @@ init_mode=$4      # rosette-like or random starting config
 run_dir=$5        # run directory
 
 # Interaction energy for euchromatin and centromere region
-e_eueu=0.4
+e_eueu=0.0
 e_cent=0.4
 
 # Init config (default is random walk)
