@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <cmath>
+#include <random>
 #include <string>
 #include <vector>
 #include <memory>
@@ -45,16 +46,27 @@ CMap ContactMap::createFromArray(vector<vector<double> >* matrix){
   return map;
 }
 
-CMap
-ContactMap::createFromPosFile(int numOfBeads, double lx, double ly, double lz,
-			      double cutoff, string contactType,
-			      int startTime, int endTime, int timeInc,
-			      string file){
+CMap ContactMap::createFromPosFile(int numOfBeads, double lx, double ly, 
+				   double lz, double cutoff, 
+				   string contactType, int startTime, 
+				   int endTime, int timeInc, string file){
   CMap map {new ContactMap(numOfBeads)};
   map->importFromPosFile(numOfBeads, lx, ly, lz, cutoff, contactType,
 			 startTime, endTime, timeInc, file);
   return map;
 }
+
+CMap ContactMap::createFromSimulatedHiC(int numOfBeads, double lx,
+					double ly, double lz, 
+					double cutoff, long numOfCounts,
+					int startTime, int endTime,
+					int timeInc, string file){
+  CMap map {new ContactMap(numOfBeads)};
+  map->simulateHiC(numOfBeads, lx, ly, lz, cutoff, numOfCounts,
+		   startTime, endTime, timeInc, file);
+  return map;
+}
+
 
 CMap ContactMap::createFromMatrixFile(int n, bool full,
 				      string file){
@@ -94,97 +106,11 @@ void ContactMap::importFromPosFile(int numOfBeads,
     }
   }
   reader.close();
+  
   // Normalise contact map
-  for (int i {}; i < numOfBeads; i++){
-    for (int j {}; j < numOfBeads; j++){
-      set(i, j, get(i, j) / count);
-    }
-  }
+  (*contact) /= static_cast<double>(count);
 }
 
-
-
-/*void ContactMap::importFromPosFile(int numOfBeads, 
-				   double lx, double ly, double lz,
-				   double cutoff, string contactType,
-				   int startTime, int endTime, int timeInc,
-				   string file){
-  
-  // Useful constants for reading the position file
-  const int dimensions {3};
-  const int headerLines {2};
-  
-  vector<double> zeroVec (dimensions,0.0);
-  vector<vector<double> >* position = 
-    new vector<vector<double> >(numOfBeads, zeroVec);
-  vector<int>* type = new vector<int>(numOfBeads, 0);
-
-  ifstream reader;
-  reader.open(file);
-  
-  // Check that the file exists and can be read
-  if (!reader){
-    cout << "Problem in reading position file!" << endl;
-    return;
-  }
-
-  // Reset the contact map
-  reset(numOfBeads);
-  
-  string line, sym;
-  double x, y, z;
-  int ix, iy, iz, t;
-  istringstream iss;
-  int count {};
-  long time {};
-
-  while (!reader.eof()){
-    // Ignore header lines
-    for (int i {}; i < headerLines; i++){
-      getline(reader, line);
-    }
-
-    if (time >= startTime && time <= endTime){
-      // Read bead position data
-      for (int i {}; i < numOfBeads; i++){
-	getline(reader, line);
-	iss.clear();
-	iss.str(line);
-	iss >> sym >> x >> y >> z >> ix >> iy >> iz >> t;
-	(*position)[i][0] = x + ix*lx;
-	(*position)[i][1] = y + iy*ly;
-	(*position)[i][2] = z + iz*lz;
-	(*type)[i] = t;
-      }
-      if (contactType == "colour"){
-	computeColourContact(cutoff, position, type);
-      } else {
-	computeContact(cutoff, position);
-      }
-      count++;
-      
-    } else if (time < startTime) {
-      for (int i {}; i < numOfBeads; i++){
-	getline(reader, line);
-      }
-    } else {
-      break;
-    }
-    time += timeInc;
-  }
-  reader.close();
-
-  // Normalise contact map
-  for (int i {}; i < numOfBeads; i++){
-    for (int j {}; j < numOfBeads; j++){
-      set(i, j, get(i, j) / count);
-    }
-  }
-  
-  // Delete resources
-  delete position;
-  delete type;
-  }*/
 
 void ContactMap::importFromMatrixFile(int n, bool full, string file){
   ifstream reader;
@@ -242,9 +168,65 @@ void ContactMap::importFromArray(vector<vector<double> >* matrix){
   }
 }
 
+void ContactMap::simulateHiC(int numOfBeads, double lx, double ly,
+			     double lz, double cutoff, 
+			     long numOfCounts, int startTime, 
+			     int endTime, int timeInc, string file){
+  PositionReader reader;
+  reader.open(file, numOfBeads, lx, ly, lz, timeInc);
+  if (!reader.isOpen()){
+    return;
+  }
+  
+  // Reset the contact map
+  reset(numOfBeads);
+
+  // Determine the number of reads per frame
+  int numOfFrames {(endTime - startTime) / timeInc+1};
+  long countsPerFrame {numOfCounts / numOfFrames};
+  
+  // Create a separation map that is used to generate counts
+  CMap separation {createZeroMap(numOfBeads)};
+  
+  long counts {}, time {};
+  int bead1, bead2;
+  double sep, p;
+
+  // Init random generator (don't use srand())
+  std::random_device rd;
+  std::mt19937 mt(rd());
+  std::uniform_int_distribution<int> randInt(0, numOfBeads-1);
+  std::uniform_real_distribution<double> randDouble(0,1.0);
+  
+  while(reader.nextFrame()){
+    time = reader.getTime();
+    if (time >= startTime && time <= endTime){
+      cout << "Doing time = " << time << endl;
+      // Compute the separation between beads
+      computeSeparation(separation, reader);
+
+      // Generate the counts
+      counts = 0;
+      do {
+	// Pick two beads randomly and check if that generates a count
+	bead1 = randInt(mt);
+	bead2 = randInt(mt);
+	p = randDouble(mt);
+	sep = separation->get(bead1, bead2);
+	if (inGaussianContact(sep, cutoff, p)){
+	  set(bead1, bead2, get(bead1, bead2) + 1.0);
+	  counts++;
+	}
+      } while (counts < countsPerFrame);
+    } else if (time > endTime) {
+      break;
+    }
+  }
+  reader.close();
+}
+
 // Compute normal contact
 void ContactMap::computeContact(double cutoff, const PositionReader& reader){
-  cout << "Computing contacts" << endl;
   double dx, dy, dz;
   for (int i {}; i < size; i++){
     set(i, i, get(i, i) + 1.0);
@@ -262,7 +244,8 @@ void ContactMap::computeContact(double cutoff, const PositionReader& reader){
 
 
 // Compute colour contact
-void ContactMap::computeColourContact(double cutoff, const PositionReader& reader){
+void ContactMap::computeColourContact(double cutoff, 
+				      const PositionReader& reader){
   double dx, dy, dz;
   for (int i {}; i < size; i++){
     set(i, i, get(i, i) + 1.0);
@@ -278,55 +261,20 @@ void ContactMap::computeColourContact(double cutoff, const PositionReader& reade
   }
 }
 
-/*
-// Compute normal contact
-void ContactMap::computeContact(double cutoff,
-				vector<vector<double> >* position){
-  double dx, dy, dz;
+void ContactMap::computeSeparation(CMap separation,
+				   const PositionReader& reader){
+  double dx, dy, dz, dr;
   for (int i {}; i < size; i++){
-    set(i, i, get(i, i) + 1.0);
+    separation->set(i, i, 0.0);
     for (int j {}; j < i; j++){
-      dx = (*position)[i][0] - (*position)[j][0];
-      dy = (*position)[i][1] - (*position)[j][1];
-      dz = (*position)[i][2] - (*position)[j][2];
-      if (inContact(distance(dx,dy,dz),cutoff)){
-	set(i, j, get(i, j) + 1.0);
-	set(j, i, get(j, i) + 1.0);
-      }
+      dx = reader.getUnwrappedPosition(i,0) - reader.getUnwrappedPosition(j,0);
+      dy = reader.getUnwrappedPosition(i,1) - reader.getUnwrappedPosition(j,1);
+      dz = reader.getUnwrappedPosition(i,2) - reader.getUnwrappedPosition(j,2);
+      dr = distance(dx,dy,dz);
+      separation->set(i, j, dr);
+      separation->set(j, i, dr);
     }
   }
-}
-
-
-// Compute colour contact
-void ContactMap::computeColourContact(double cutoff,
-				      vector<vector<double> >* position,
-				      vector<int>* type){
-  double dx, dy, dz;
-  for (int i {}; i < size; i++){
-    set(i, i, get(i, i) + 1.0);
-    for (int j {}; j < i; j++){
-      dx = (*position)[i][0] - (*position)[j][0];
-      dy = (*position)[i][1] - (*position)[j][1];
-      dz = (*position)[i][2] - (*position)[j][2];
-      if (inContact(distance(dx,dy,dz),cutoff)){
-	set(i, j, get(i, j) + 1.0);
-	set(j, i, get(j, i) + 1.0);
-      }
-    }
-  }
-}
-*/
-
-// Determine if in contact
-bool inContact(double distance, double cutoff){
-  if (distance < cutoff) return true;
-  return false;
-}
-
-// Compute the length of a 3D vector
-double distance(double x, double y, double z){
-  return sqrt(x*x+y*y+z*z);
 }
 
 // Accessor methods
@@ -379,6 +327,106 @@ void ContactMap::vanillaNorm(){
   }
   delete xSum;
   delete ySum;
+}
+
+// Normalise the contact map by the Iterative Correction and
+// Eigendecomposition (ICE) procedure (Imakaev et al. 2012)
+// See also the blog post:
+// https://liorpachter.wordpress.com/2013/11/17/imakaev_explained/
+void ContactMap::iceNorm(int numOfIter, double threshold){
+  /*  // Zero diagonal and first off diagonal
+  for (int i {}; i < size; i++){
+    for (int j {i-1}; j <= i+1; j++){
+      if (j < 0 || j >= size) continue;
+      (*contact)(i,j) = 0.0;
+    }
+    }*/
+
+  // Zero values below certain threshold
+  contact->transform([&threshold](double val) {
+      return val < threshold ? 0.0 : val;});
+  
+  /*  // Check and remove the rows/cols with zero entries
+  vector<int> emptyCols {};
+  for (int i {}; i < size; i++){
+    if (all(contact->col(i) < 1e-14)){
+      emptyCols.push_back(i);
+      cout << i << endl;
+    }
+  }
+  int removedCols {};
+  for (const int& col : emptyCols){
+    cout << col-removedCols << endl;
+    contact->shed_col(col-removedCols);
+    contact->shed_row(col-removedCols);
+    removedCols++;
+    }*/
+
+  int reducedSize {size};
+
+  vec* s {new vec(reducedSize, fill::ones)};
+  vec* totalBias {new vec(reducedSize, fill::ones)};
+  
+  for (int n {}; n < numOfIter; n++){
+    (*s) = sum(*contact, 1);
+
+    // Ignore diagonal
+    (*s) -= contact->diag();
+
+    int count {};
+    double savg {};
+    for (int i {}; i < reducedSize; i++){
+      if ((*s)(i) == 0) continue;
+      savg += (*s)(i);
+      count++;
+    }
+    savg /= static_cast<double>(count);
+    (*s) /= savg;
+    s->transform([](double val){return val == 0.0 ? 1.0 : val;});
+    (*totalBias) %= (*s);
+    for (int i {}; i < reducedSize; i++){
+      for (int j {}; j < reducedSize; j++){
+	(*contact)(i,j) = (*contact)(i,j)/(*s)(i)/(*s)(j);
+      }
+    }
+  }
+
+  
+		  /*  vec* b {new vec(reducedSize, fill::ones)};
+  vec* db {new vec(reducedSize, fill::zeros)};
+  vec* s {new vec(reducedSize, fill::zeros)};
+
+  for (int n {}; n < numOfIter; n++){
+    (*s) = sum(*contact, 1);
+    double savg = mean(*s);
+    (*db) = (*s) / savg;
+    for (int i {}; i < reducedSize; i++){
+      if (fabs((*db)(i)) < 1e-14){
+	(*db)(i) = 1.0;
+      }
+    }
+    
+    for (int i {}; i < reducedSize; i++){
+      for (int j {}; j < reducedSize; j++){
+	(*contact)(i,j) = (*contact)(i,j)/(*db)(i)/(*db)(j);
+      }
+    }
+    (*b) = (*b) % (*db);
+    cout << "Iteration " << n << " Sigma: " << stddev((*b)) << endl;
+    }*/
+
+  // Repopulate empty rows/cols
+  /*  for (const int& col : emptyCols){
+    contact->insert_cols(col, 1);
+    contact->insert_rows(col, 1);
+    }*/
+  
+  cout << sum(*contact,1) << endl;
+
+  delete s;
+  delete totalBias;
+  //  delete b;
+  //  delete db;
 }
 
 // Normalise the contact map by the contact probability function
@@ -501,7 +549,7 @@ void ContactMap::exportToFile(bool full, bool dense, bool space, string file){
     return; 
   }
   
-  writer << std::setprecision(10) << std::fixed;
+  writer << std::setprecision(10);// << std::fixed;
 
   double value;
   const double tol {1e-15};
@@ -554,3 +602,22 @@ void ContactMap::exportCombineMapsToFile(CMap map1, CMap map2,
     writer << endl;
   }
 }
+
+// Determine if in contact
+bool inContact(double sep, double cutoff){
+  if (sep < cutoff) return true;
+  return false;
+}
+
+bool inGaussianContact(double sep, double cutoff, double p){
+  if (p < exp(-(sep*sep)/(cutoff*cutoff))){
+    return true;
+  }
+  return false;
+}
+
+// Compute the length of a 3D vector
+double distance(double x, double y, double z){
+  return sqrt(x*x+y*y+z*z);
+}
+

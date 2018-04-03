@@ -14,7 +14,8 @@ using std::string;
 int main(int argc, char* argv[]){
 
   if (argc < 7){
-    cout << "Not enough arguments! Process aborted." << endl;
+    cout << "[numOfBeads] [mode1] [matrixFile1] "
+	 << "[mode2] [matrixFile2] [outFile]" << endl;
     return 1;
   }
 

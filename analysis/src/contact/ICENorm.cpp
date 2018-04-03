@@ -1,12 +1,9 @@
-/* VanillaNorm.cpp
+/* ICENorm.cpp
  *
  * A program that reads in a contact matrix in the format
  * (bin_i bin_j count_ij) (full or upper triangle) and
- * performs the square root vanilla normalisation on the matrix.
- *
- * The square root vanilla normalisation procedure is as follows:
- * M_ij* = M_ij/sqrt(sum_k M_kj * sum_l M_il)
- * For references, see Rao et al. Cell (1509) 1665-1680, 2014
+ * performs the ICE normalisation procedure as detailed in
+ * the paper Imakaev et al. Nature Methods (9) 999-1003, 2012.
  *
  */
 
@@ -25,14 +22,15 @@ using std::istringstream;
 int main(int argc, char* argv[]){
 
   // Read in arguments
-  if (argc < 5){
-    cout << "Not enough arguments!" << endl; 
-    cout << "Usage ./VanillaNorm [size] [full/upper] "
-	 << " [input] [output]" << endl;
+  if (argc < 7){
+    cout << "Usage ./ICENorm [size] [numOfIter] [threshold] "
+	 << "[mode=full/upper] [matrixFile] [normFile]" << endl;
     return 1;
   }
   int argi {};
   int size {stoi(string(argv[++argi]), nullptr, 10)};
+  int iter {stoi(string(argv[++argi]), nullptr, 10)};
+  double threshold {stod(string(argv[++argi]), nullptr)};
   string mode (argv[++argi]);
   string matrixFile (argv[++argi]);
   string normFile (argv[++argi]);
@@ -41,6 +39,6 @@ int main(int argc, char* argv[]){
   if (mode != "full") full = false;
 
   CMap map = ContactMap::createFromMatrixFile(size, full, matrixFile);
-  map->vanillaNorm();
+  map->iceNorm(iter, threshold);
   map->exportToFile(true, true, true, normFile);
 }

@@ -17,12 +17,6 @@ using namespace arma;
 class ContactMap;
 using CMap = shared_ptr<ContactMap>;
 
-// Determine if the distance is less than the cutoff
-bool inContact(double distance, double cutoff);
-
-// Compute the length of a 3D vector
-double distance(double x, double y, double z);
-
 class ContactMap {
 
 private:
@@ -33,12 +27,13 @@ private:
   ContactMap(int n, int value = 0.0);
   
   // Helper methods for computing contacts
-  /*  void computeContact(double cutoff, vector< vector<double> >* position);
-  void computeColourContact(double cutoff, vector< vector<double> >* position, 
-  vector<int>* type);*/
   void computeContact(double cutoff, const PositionReader& reader);
   void computeColourContact(double cutoff, const PositionReader& reader);
 
+  // Compute the separation distance between beads in the 
+  // current reading frame
+  void computeSeparation(CMap separatioMap, const PositionReader& reader);
+  
 public:
   // Static factory methods
   // Create a contact map with zero interaction
@@ -48,14 +43,21 @@ public:
   static CMap createFromArray(vector< vector<double>>* matrix);
 
   // Create a contact map from a position file
-  static CMap 
-  createFromPosFile(int numOfBeads, double lx, double ly, double lz,
-		    double cutoff, string contactType,
-		    int startTime, int endTime, int timeInc, string file);
+  static CMap createFromPosFile(int numOfBeads, double lx, double ly, 
+				double lz, double cutoff, string contactType,
+				int startTime, int endTime, int timeInc, 
+				string file);
 
 
   // Create a contact map from a matrix file
   static CMap createFromMatrixFile(int n, bool full, string file);
+
+  
+  static CMap createFromSimulatedHiC(int numOfBeads, double lx, 
+				     double ly, double lz, double cutoff,
+				     long numOfCounts, int startTime,
+				     int endTime, int timeInc, 
+				     string file);
   
   // Accessor methods
   // Set the contact probability of the interaction pair (i,j)
@@ -70,6 +72,12 @@ public:
   // Map manipulation methods
   // Normalise the contact map using the vanilla normalisation method
   void vanillaNorm();
+
+  // Normalise the contact map by the Iterative Correction and
+  // Eigendecomposition (ICE) procedure (Imakaev et al. 2012)
+  // See also the blog post:
+  // https://liorpachter.wordpress.com/2013/11/17/imakaev_explained/
+  void iceNorm(int numOfIter, double threshold);
 
   // Normalise the contact map by the contact probability function
   void linearProbNorm();
@@ -92,14 +100,21 @@ public:
   // Set the contact map to the defined size with all contacts being zero
   void reset(int n);
 
-  // Import contact map from position file
+  // Create contact map from position file
   void importFromPosFile(int numOfBeads, double lx, double ly, double lz,
 			 double cutoff, string contactType,
 			 int startTime, int endTime, int timeInc, string file);
 
+  // Create contact map from position file using a stochastic procedure
+  // that simulates HiC reads
+  void simulateHiC(int numOfBeads, double lx, double ly, double lz,
+		   double cutoff, long numOfCounts, int startTime,
+		   int endTime, int timeInc, string file);
+
   // Import contact map from a matrix file
   void importFromMatrixFile(int n, bool full, string file);
 
+  // Import contact map from a 2D vector<double> array
   void importFromArray(vector< vector<double>>* matrix);
 
   // Output contact map to a file
@@ -109,5 +124,15 @@ public:
   static void exportCombineMapsToFile(CMap map1, CMap map2, 
 				      bool dense, bool space, string file);
 };
+
+// Other helper methods
+
+// Determine if the distance is less than the cutoff
+bool inContact(double distance, double cutoff);
+bool inGaussianContact(double distance, double cutoff, double prob);
+
+// Compute the length of a 3D vector
+double distance(double x, double y, double z);
+
 
 #endif
