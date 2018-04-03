@@ -15,12 +15,10 @@ source 'runconfig.cfg'
 contact_exe="${bin}/contact/exe/AverageContactMap"
 
 # Selection arguments
-cut_off=3.0
-
 N=6303
 L=40
 chr=20
-rc=7
+rc=5
 block=5
 colour=0  # 0 = don't distinguish EU/HET, 1 = distinguish EU/HET
 tstart=150000
@@ -47,22 +45,20 @@ do
     ehh=$(python -c "print '%.1f' % ($ehh + $ehh_inc)")
 done
 
-source 'Run.sh'
-run_cmd
 
 # Parallel runs
 
-#total_jobs=$jobid
-#jobid=0
+total_jobs=$jobid
+jobid=0
 
-#while (( $(bc <<< "$jobid < $total_jobs") ))
-#do
-#    for (( i=0; i<$max_jobs && $jobid < $total_jobs; i++))
-#    do
-#	echo "${cmd[jobid]} &"
-#	${cmd[jobid]} &
-#	jobid=$(bc <<< "$jobid + 1")
-#    done
-#    wait
-#done
+while (( $(bc <<< "$jobid < $total_jobs") ))
+do
+    for (( i=0; i<$max_jobs && $jobid < $total_jobs; i++))
+    do
+	echo "${cmd[jobid]} &"
+	${cmd[jobid]} &
+	jobid=$(bc <<< "$jobid + 1")
+    done
+    wait
+done
 
