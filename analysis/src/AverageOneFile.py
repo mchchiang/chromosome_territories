@@ -4,12 +4,15 @@ import math
 args = sys.argv
 
 if (len(args) != 5):
-    print "Usage: Average [avg_col] [err_col] [input_file] [output_file]"
+    print "Usage: Average [avg_col] [err_col] [start_row] [end_row] " \
+        "[input_file] [output_file]"
     sys.exit(1)
 
 args.pop(0) # Ignore self
 avg_col = int(args.pop(0))
 err_col = int(args.pop(0))
+start_row = int(args.pop(0))
+end_row = int(args.pop(0))
 input_file = args.pop(0)
 output_file = args.pop(0)
 
@@ -22,7 +25,11 @@ error = 0.0
 n = 0
 
 with open(input_file, 'r') as f:
-    for line in f:
+    for row, line in enumerate(f):
+        if (row > end_row):
+            break
+        if (row < start_row):
+            continue
         if (line.startswith("#")): # Ignore lines with comments
             continue
         data = line.strip().split()
@@ -61,6 +68,3 @@ with open(input_file, 'r') as f:
     writer.write(output)
 
 writer.close()
-    
-        
-    

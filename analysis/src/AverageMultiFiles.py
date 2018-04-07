@@ -3,8 +3,13 @@ from itertools import izip
 import math
 
 args = sys.argv
-args.pop(0) #ignore self
 
+if (args < 7):
+    print "Usage: AverageMultiFiles.py [ref_col] [avg_col] [err_col] " \
+        "[startpt] [output_file] [data_files]"
+    sys.exit(1)
+
+args.pop(0) # Ignore self
 ref_col = int(args.pop(0))
 avg_col = int(args.pop(0))
 err_col = int(args.pop(0))

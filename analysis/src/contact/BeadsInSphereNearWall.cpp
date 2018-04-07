@@ -1,7 +1,7 @@
 /* BeadsInSphere.cpp
  *
  * A program that reads the position file and counts                          
- * the average number of heterochromatin beads within
+ * the average number of heterochromatin baeds within
  * a cutoff radius from a heterochromatin bead
  */
 
@@ -28,24 +28,21 @@ double enclosedVolume(double radius, double distOverWall);
 
 int main(int argc, char* argv[]){
 
-  if (argc != 15){
-    cout << "Usage: [numOfBeads] [euBeads] [hetBeads] " 
-	 << "[lx] [ly] [lz] [cutoff] [localDist] "
-	 << "[beadType] [startTime] [endTime] [timeInc] "
+  if (argc < 13){
+    cout << "Usage: [numOfBeads] [lx] [ly] [lz] [cutoff] [wallDist] "
+	 << "[localDist] [startTime] [endTime] [timeInc] "
 	 << "[posFile] [outFile]" << endl;
     return 1;
   }
 
   int argi {};
   int numOfBeads {stoi(string(argv[++argi]), nullptr, 10)};
-  int euBeads {stoi(string(argv[++argi]), nullptr, 10)};
-  int hetBeads {stoi(string(argv[++argi]), nullptr, 10)};
   double lx {stod(string(argv[++argi]), nullptr)};
   double ly {stod(string(argv[++argi]), nullptr)};
   double lz {stod(string(argv[++argi]), nullptr)};
   double cutoff {stod(string(argv[++argi]), nullptr)};
+  double wallDist {stod(string(argv[++argi]), nullptr)};
   int localDist {stoi(string(argv[++argi]), nullptr, 10)};
-  string beadType (argv[++argi]);
   int startTime {stoi(string(argv[++argi]), nullptr, 10)};
   int endTime {stoi(string(argv[++argi]), nullptr, 10)};
   int timeInc {stoi(string(argv[++argi]), nullptr, 10)};
@@ -58,21 +55,8 @@ int main(int argc, char* argv[]){
     return 1;
   }
 
-  // Bead selection - selet only hetrochromatin beads or select all beads
-  int norm {numOfBeads};
-  bool(*isSelectedType)(int){};
-  if (beadType == "het"){
-    isSelectedType = [](int t){return t==2;};
-    norm = hetBeads;
-  } else if (beadType == "eu"){
-    isSelectedType = [](int t){return t==1;};
-    norm = euBeads;
-  } else {
-    isSelectedType = [](int t){return true;};
-    norm = numOfBeads;
-  }
-  
   // Beads in sphere
+  vector<double>* avgZPos {new vector<double>(numOfBeads, 0.0)};
   vector<double>* localBeadsInSphere {new vector<double>(numOfBeads, 0.0)};
   vector<double>* distalBeadsInSphere {new vector<double>(numOfBeads, 0.0)};
   vector<double>* localDensity {new vector<double>(numOfBeads, 0.0)};
@@ -91,7 +75,7 @@ int main(int argc, char* argv[]){
       std::fill(distalCount->begin(), distalCount->end(), 0);
 
       // Compute contact
-      double dx, dy, dz, ti, tj, volume;
+      double dx, dy, dz, volume;
       for (int i {}; i < numOfBeads; i++){
 	(*localCount)[i]++;
 	for (int j {}; j < i; j++){
@@ -101,10 +85,7 @@ int main(int argc, char* argv[]){
 	    reader.getUnwrappedPosition(j, 1);
 	  dz = reader.getUnwrappedPosition(i, 2) - 
 	    reader.getUnwrappedPosition(j, 2);
-	  ti = reader.getType(i);
-	  tj = reader.getType(j);
-	  if (length(dx, dy, dz) <= cutoff &&
-	      isSelectedType(ti) && isSelectedType(tj)){
+	  if (length(dx, dy, dz) <= cutoff){
 	    if (abs(i-j) <= localDist){
 	      (*localCount)[i]++;
 	      (*localCount)[j]++;
@@ -119,6 +100,7 @@ int main(int argc, char* argv[]){
       double z;
       for (int i {}; i < numOfBeads; i++){
 	z = lz/2.0-reader.getUnwrappedPosition(i, 2);
+	(*avgZPos)[i] += z;
 	(*localBeadsInSphere)[i] += (*localCount)[i];
 	(*distalBeadsInSphere)[i] += (*distalCount)[i];
 	volume = enclosedVolume(cutoff, cutoff-z);
@@ -133,29 +115,36 @@ int main(int argc, char* argv[]){
 
   // Average quantities by time
   for (int i {}; i < numOfBeads; i++){
+    (*avgZPos)[i] /= static_cast<double>(count);
     (*localBeadsInSphere)[i] /= static_cast<double>(count);
     (*distalBeadsInSphere)[i] /= static_cast<double>(count);
     (*localDensity)[i] /= static_cast<double>(count);
     (*distalDensity)[i] /= static_cast<double>(count);
   }
   
-  // Average quantites by beads
+  // Average quantites by beads (for those near the wall)
   double avgLocalBeadsInSphere {}, avgDistalBeadsInSphere {};
   double avgLocalDensity {}, avgDistalDensity {};
   double avgBeadsInSphere {}, avgDensity {};
+  int numOfWallBeads {};
   for (int i {}; i < numOfBeads; i++){
-    avgLocalBeadsInSphere += (*localBeadsInSphere)[i];
-    avgDistalBeadsInSphere += (*distalBeadsInSphere)[i];
-    avgLocalDensity += (*localDensity)[i];
-    avgDistalDensity += (*distalDensity)[i];
+    if ((*avgZPos)[i] <= wallDist){
+      avgLocalBeadsInSphere += (*localBeadsInSphere)[i];
+      avgDistalBeadsInSphere += (*distalBeadsInSphere)[i];
+      avgLocalDensity += (*localDensity)[i];
+      avgDistalDensity += (*distalDensity)[i];
+      numOfWallBeads++;
+    }
   }
   
-  avgLocalBeadsInSphere /= static_cast<double>(norm);
-  avgDistalBeadsInSphere /= static_cast<double>(norm);
-  avgLocalDensity /= static_cast<double>(norm);
-  avgDistalDensity /= static_cast<double>(norm);
-  avgBeadsInSphere = avgLocalBeadsInSphere + avgDistalBeadsInSphere;
-  avgDensity = avgLocalDensity + avgDistalDensity;
+  if (numOfWallBeads > 0){
+    avgLocalBeadsInSphere /= static_cast<double>(numOfWallBeads);
+    avgDistalBeadsInSphere /= static_cast<double>(numOfWallBeads);
+    avgLocalDensity /= static_cast<double>(numOfWallBeads);
+    avgDistalDensity /= static_cast<double>(numOfWallBeads);
+    avgBeadsInSphere = avgLocalBeadsInSphere + avgDistalBeadsInSphere;
+    avgDensity = avgLocalDensity + avgDistalDensity;
+  }
   
   ofstream writer;
   writer.open(outFile);
@@ -175,6 +164,7 @@ int main(int argc, char* argv[]){
   writer.close();
 
   // Delete resources
+  delete avgZPos;
   delete localCount;
   delete distalCount;
   delete localBeadsInSphere;

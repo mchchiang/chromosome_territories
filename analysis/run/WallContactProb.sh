@@ -16,7 +16,7 @@ ehh=$(python -c "print '%.1f' % ($ehh_start)")
 ehl=$(python -c "print '%.1f' % ($ehl_start)")
 
 source 'runconfig.cfg'
-kymo_exe="${bin}/contact/exe/ContactKymograph"
+contact_exe="${bin}/contact/exe/WallContactProb"
 
 # Selection arguments
 wall_dist=3.0
@@ -24,7 +24,7 @@ wall_dist=3.0
 L=40
 chr=20
 N=6303
-t_start=0
+t_start=150000
 t_end=200000
 t_inc=1000
 
@@ -41,9 +41,9 @@ do
 	do
 	    name="sene_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}_run_${run}"
 	    pos_file="${in_dir}/pos_${name}.dat"
-	    kymo_file="${out_dir}/wall-kymo_${name}.dat"
+	    contact_file="${out_dir}/wall-contact_${name}.dat"
 
-	    cmd[$jobid]="$kymo_exe $N $L $L $L $wall_dist $t_start $t_end $t_inc $pos_file $kymo_file"
+	    cmd[$jobid]="$contact_exe $N $L $L $L $wall_dist $t_start $t_end $t_inc $pos_file $contact_file"
 	    jobid=$(bc <<< "$jobid + 1")
 
 	done

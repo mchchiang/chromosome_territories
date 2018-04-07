@@ -9,12 +9,18 @@ ehl_inc=$6
 run_start=$7
 run_end=$8
 run_inc=$9
-dir=${10}
+in_dir=${10}
+out_dir=${11}
 
 N=6303
+Nhet=3079
+Neu=2923
+Ncent=301
+bead_type="het"
+
 L=40
 chr=20
-rc=7
+rc=5
 ld=200
 t_start=150000
 t_end=200000
@@ -23,11 +29,8 @@ t_inc=1000
 ehh=$(python -c "print '%.1f' % ($ehh_start)")
 ehl=$(python -c "print '%.1f' % ($ehl_start)")
 
-bis_exe="./BeadsInSphere"
-average_py="./GetAverage.py"
-
-bis_avg_file="${dir}/bis-localfrac_avg_rc_${rc}_ld_${ld}.dat"
-> $bis_avg_file
+source 'runconfig.cfg'
+bis_exe="${bin}/contact/exe/BeadsInSphere"
 
 max_jobs=8
 cmd=()
@@ -41,14 +44,11 @@ do
 	name="sene_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
 	for (( run=$run_start; $run<=$run_end; run+=$run_inc ))
 	do
-	    echo "Calculating beads in sphere for HH = ${ehh} HL = ${ehl} run = ${run}"
-	    pos_file="${dir}/pos_${name}_run_${run}.dat"
-	    out_file="${dir}/bis_${name}_run_${run}.dat"
-
+	    pos_file="${in_dir}/pos_${name}_run_${run}.dat"
+	    out_file="${out_dir}/bis_${name}_run_${run}.dat"
 	    if [ -e $pos_file ]; then
-		cmd[$jobid]="$bis_exe $N $L $L $L $rc $ld $t_start $t_end $t_inc $pos_file $out_file"
+		cmd[$jobid]="$bis_exe $N $Neu $Nhet $L $L $L $rc $ld $bead_type $t_start $t_end $t_inc $pos_file $out_file"
 		jobid=$(bc <<< "$jobid + 1")
-
 	    fi
 	done
 	ehl=$(python -c "print '%.1f' % ($ehl + $ehl_inc)")
@@ -71,28 +71,3 @@ do
     done
     wait
 done
-
-# Average the data
-echo "Averaging data"
-
-ehh=$(python -c "print '%.1f' % ($ehh_start)")
-ehl=$(python -c "print '%.1f' % ($ehl_start)")
-
-while (( $(bc <<< "$ehh < $ehh_end") ))
-do
-    ehl=$(python -c "print '%.1f' % ($ehl_start)")
-    while (( $(bc <<< "$ehl < $ehl_end") ))
-    do
-	echo "Averaging HH = ${ehh} HL = ${ehl}"
-	file="${dir}/bis_cluster_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
-	python $average_py -1 0 -1 -1 ${file}_avg.dat ${file}*.dat
-	data=$(cat ${file}_avg.dat)
-	echo "${ehh} ${ehl} ${data}" >> $bis_avg_file
-
-	ehl=$(python -c "print '%.1f' % ($ehl + $ehl_inc)")
-    done
-    echo >> $bis_avg_file
-    ehh=$(python -c "print '%.1f' % ($ehh + $ehh_inc)")
-done
-
-rm "${dir}/bis_cluster_chr_${chr}_L_${L}"*.dat

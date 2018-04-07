@@ -22,10 +22,10 @@ ehh=$(python -c "print '%.1f' % ($ehh_start)")
 ehl=$(python -c "print '%.1f' % ($ehl_start)")
 
 source 'runconfig.cfg'
-average_py="../src/GetAverage.py"
+average_py="../src/AverageMultiFiles.py"
 
-#bis_avg_file="${dir}/bis_wall_rc_${rc}_z_${z}_ld_${ld}.dat"
-#> $bis_avg_file
+total_file="${dir}/bis_sene_rc_${rc}_ld_${ld}.dat"
+> $total_file
 
 
 # Average the data
@@ -40,7 +40,7 @@ do
     while (( $(bc <<< "$ehl < $ehl_end") ))
     do
 	echo "Averaging HH = ${ehh} HL = ${ehl}"
-	file="${dir}/bis_wall_L_${L}_HH_${ehh}_HL_${ehl}"
+	file="${dir}/bis_sene_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
 	local_bis_avg_file=${dir}/local-bis_avg.dat
 	distal_bis_avg_file=${dir}/distal-bis_avg.dat
 	local_density_avg_file=${dir}/local-density_avg.dat
@@ -57,8 +57,8 @@ do
 	python $average_py -1 4 -1 -1 $distal_density_avg_file ${file}*.dat
 	python $average_py -1 5 -1 -1 $density_avg_file ${file}*.dat
 
-	paste -d" " $local_bis_avg_file $distal_bis_avg_file $bis_avg_file $local_density_avg_file $distal_density_avg_file $density_avg_file > ${file}_avg.dat
-
+	data=$(paste -d" " $local_bis_avg_file $distal_bis_avg_file $bis_avg_file $local_density_avg_file $distal_density_avg_file $density_avg_file)
+	echo $ehh $ehl $data >> $total_file
 	rm $local_bis_avg_file
 	rm $distal_bis_avg_file
 	rm $bis_avg_file
@@ -68,7 +68,7 @@ do
 	
 	ehl=$(python -c "print '%.1f' % ($ehl + $ehl_inc)")
     done
-#    echo >> $bis_avg_file
+    echo >> $total_file
     ehh=$(python -c "print '%.1f' % ($ehh + $ehh_inc)")
 done
 
