@@ -6,7 +6,8 @@ ehh_inc=$3
 ehl_start=$4
 ehl_end=$5
 ehl_inc=$6
-dir=$7
+in_dir=$7
+out_dir=$8
 
 ehh=$(python -c "print '%.1f' % ($ehh_start)")
 ehl=$(python -c "print '%.1f' % ($ehl_start)")
@@ -35,8 +36,8 @@ do
     while (( $(bc <<< "$ehl < $ehl_end") ))
     do
 	name="sene_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
-	pos_file="${dir}/pos_${name}"*.dat
-	contact_file="${dir}/contact_${name}_avg.dat"
+	pos_file="${in_dir}/pos_${name}"*.dat
+	contact_file="${out_dir}/contact_${name}_avg.dat"
 	cmd[$jobid]="$contact_exe $N $L $L $L $rc $block $colour $tstart $tend $tinc $contact_file ${pos_file}"
 	jobid=$(bc <<< "$jobid + 1")
 
