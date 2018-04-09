@@ -10,7 +10,7 @@ init_mode=$4      # rosette-like or random starting config
 run_dir=$5        # run directory
 
 # Interaction energy for euchromatin and centromere region
-e_eueu=0.0
+e_eueu=0.4
 e_cent=0.4
 
 # Init config (default is random walk)
@@ -200,5 +200,5 @@ sed -i -- "s/RUN1_SIMFILE/${run1_simfile}/g" $file
 ${gen_chromo_exe} $chromo_file $lam_file $het_file $chr_num $init_box_size $init_box_size $init_box_size $buffer "${run_dir}/${init_file}" "${run_dir}/${map_file}"
 
 # Relabel centromere region
-awk '{if (NR>2663&&NR<2965) {$3=4; print} else {print}}' ${run_dir}/${init_file} > ${run_dir}/temp
+awk '{if (NR>2603&&NR<3005) {$3=4; print} else {print}}' ${run_dir}/${init_file} > ${run_dir}/temp
 mv ${run_dir}/temp ${run_dir}/${init_file}
