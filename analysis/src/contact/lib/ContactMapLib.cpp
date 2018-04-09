@@ -554,8 +554,7 @@ void ContactMap::exportToFile(bool full, bool dense, bool space, string file){
   double value;
   const double tol {1e-15};
   for (int i {}; i < size; i++){
-    for (int j {}; j < size; j++){
-      if (!full && j > i) break;
+    for (int j {full?0:i}; j < size; j++){
       value = get(i, j);
       if (!dense && fabs(value) < tol)	continue;
       writer << i << " " << j << " " << value << endl;
@@ -591,9 +590,9 @@ void ContactMap::exportCombineMapsToFile(CMap map1, CMap map2,
   for (int i {}; i < size; i++){
     for (int j {}; j < size; j++){
       if (i <= j){
-	value = map2->get(i,j);
-      } else {
 	value = map1->get(i,j);
+      } else {
+	value = map2->get(i,j);
       }
       if (!dense && fabs(value) < tol)	continue;
       writer << i << " " << j << " " << value << endl;
