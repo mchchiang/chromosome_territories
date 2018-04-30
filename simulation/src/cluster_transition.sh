@@ -3,11 +3,13 @@
 # An input script for setting parameters in the LAMMPS config file
 
 # Read in and set parameters
-e_hethet=$1       # HH interaction
-e_hetlam=$2       # HL interaction
-run=$3            # trial number
-init_mode=$4      # rosette-like or random starting config
-run_dir=$5        # run directory
+e_hethet=$1       # HH interaction in growing
+e_hetlam=$2       # HL interaction in growing
+e_hethet2=$3      # HH interaction in senescence
+e_hetlam2=$4      # HL interaction in senescence
+run=$5            # trial number
+init_mode=$6      # rosette-like or random starting config
+run_dir=$7        # run directory
 
 # Interaction energy for euchromatin and centromere region
 e_eueu=0.4
@@ -57,6 +59,7 @@ prep3_time=5000 # 5000
 run_printfreq=1000
 run1_seed=$(python GetRandom.py $max_seed)
 run1_time=200000
+run2_time=200000
 
 lam_atoms=2500
 lam_seed=$(python GetRandom.py $max_seed)
@@ -64,7 +67,7 @@ lam_seed=$(python GetRandom.py $max_seed)
 delta_t=0.01       # time step size in Brownian time units
 
 # Wall type
-wall="bead"        # choose between "ljwall" (default) or "bead"
+wall="transition"        # choose between "ljwall" (default) or "bead"
 
 # Interaction energy parameters
 # Harmonic potential
@@ -85,6 +88,10 @@ e_hethet_norm=$(python -c "print '%.13f' % ($e_hethet/$norm)")
 e_hetlam_norm=$(python -c "print '%.13f' % ($e_hetlam/$norm)")
 e_eueu_norm=$(python -c "print '%.13f' % ($e_eueu/$norm)")
 e_cent_norm=$(python -c "print '%.13f' % ($e_cent/$norm)")
+
+# For looking at growing -> senescence transition
+e_hethet2_norm=$(python -c "print '%.13f' % ($e_hethet2/$norm)")
+e_hetlam2_norm=$(python -c "print '%.13f' % ($e_hetlam2/$norm)")
 
 # Set output file names
 sim_name="sene_chr_${chr_num}_L_${box_size}_HH_${e_hethet}_HL_${e_hetlam}_run_${run}"
@@ -111,6 +118,7 @@ prep3_time=$(bc <<< "$prep3_time/$delta_t")
 prep3_printfreq=$(bc <<< "$prep3_printfreq/$delta_t")
 run1_time=$(bc <<< "$run1_time/$delta_t")
 run_printfreq=$(bc <<< "$run_printfreq/$delta_t")
+run2_time=$(bc <<< "$run2_time/$delta_t")
 
 # Make execution directory
 run_dir="${run_dir}/${sim_name}"
@@ -124,9 +132,13 @@ file="${run_dir}/${lammps_file}"
 if [ $wall == "bead" ]; then
     echo "Copying bead wall lammps script"
     cp Cluster-bead.lam $file
-elif [$wall == "transition" ]; then
+elif [ $wall == "transition" ]; then
     echo "Copying transition lammps script"
     cp Cluster-transition.lam $file
+    # Replace specific macros
+    sed -i -- "s/EHETHET2/${e_hethet2_norm}/g" $file
+    sed -i -- "s/EHETLAM2/${e_hetlam2_norm}/g" $file
+    sed -i -- "s/RUN2_TIME/${run2_time}/g" $file
 else
     echo "Copying lj wall lammps script"
     cp Cluster-ljwall.lam $file

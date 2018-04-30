@@ -69,7 +69,7 @@ int main(int argc, char* argv[]){
 
   double x, y, z;
   int index, t, ix, iy, iz;
-  int timestep;
+  long timestep;
 
   while (!reader.eof()){
     // Skip header lines
@@ -81,7 +81,6 @@ int main(int argc, char* argv[]){
     for (int i {}; i < 7 && !reader.eof(); i++){
       getline(reader, line);
     }
-
     // Read bead position and type
     for (int i {}; i < numOfBeads && !reader.eof(); i++){
       getline(reader, line);
@@ -96,7 +95,6 @@ int main(int argc, char* argv[]){
       (*boundaryCount)[index-1][1] = iy;
       (*boundaryCount)[index-1][2] = iz;
     }
-
     // Write position
     writer << numOfOutputBeads << endl;
     writer << "Atoms. Timestep: " << timestep << endl;

@@ -4,7 +4,7 @@
 
 # Read in and set parameters
 e_hethet=$1       # HH interaction
-e_hetlam=$2       # HL interaction
+e_start=$2       # HL interaction
 run=$3            # trial number
 init_mode=$4      # rosette-like or random starting config
 run_dir=$5        # run directory
@@ -12,6 +12,13 @@ run_dir=$5        # run directory
 # Interaction energy for euchromatin and centromere region
 e_eueu=0.4
 e_cent=0.4
+
+# HL energy varying interval
+e_hetlam=10.0 # initial quick quench to bring the system to growing phase
+e_inc=-0.1
+half_time=10000
+inc_time=2000
+max_iter=$(bc <<< "$half_time*2.0/$inc_time")
 
 # Init config (default is random walk)
 gen_chromo_exe="../bin/exe/Gen_Chr_Het"
@@ -42,21 +49,21 @@ restart_freq=1000
 
 prep1_printfreq=1000
 prep1_seed=$(python GetRandom.py $max_seed)
-prep1_time_1=4000 # 4000
-prep1_time_2=4000 # 4000
-prep1_time_3=2000 # 2000
+prep1_time_1=1000 # 4000
+prep1_time_2=1000 # 4000
+prep1_time_3=1000 # 2000
 
 prep2_printfreq=1000
 prep2_seed=$(python GetRandom.py $max_seed)
-prep2_time=5000 # 5000
+prep2_time=1000 # 5000
 
 prep3_printfreq=1000
 prep3_seed=$(python GetRandom.py $max_seed)
-prep3_time=5000 # 5000
+prep3_time=1000 # 5000
 
 run_printfreq=1000
 run1_seed=$(python GetRandom.py $max_seed)
-run1_time=200000
+run1_time=1000
 
 lam_atoms=2500
 lam_seed=$(python GetRandom.py $max_seed)
@@ -64,7 +71,7 @@ lam_seed=$(python GetRandom.py $max_seed)
 delta_t=0.01       # time step size in Brownian time units
 
 # Wall type
-wall="bead"        # choose between "ljwall" (default) or "bead"
+#wall="bead"        # choose between "ljwall" (default) or "bead"
 
 # Interaction energy parameters
 # Harmonic potential
@@ -85,6 +92,8 @@ e_hethet_norm=$(python -c "print '%.13f' % ($e_hethet/$norm)")
 e_hetlam_norm=$(python -c "print '%.13f' % ($e_hetlam/$norm)")
 e_eueu_norm=$(python -c "print '%.13f' % ($e_eueu/$norm)")
 e_cent_norm=$(python -c "print '%.13f' % ($e_cent/$norm)")
+e_start_norm=$(python -c "print '%.13f' % ($e_start/$norm)")
+e_inc_norm=$(python -c "print '%.13f' % ($e_inc/$norm)")
 
 # Set output file names
 sim_name="sene_chr_${chr_num}_L_${box_size}_HH_${e_hethet}_HL_${e_hetlam}_run_${run}"
@@ -111,6 +120,8 @@ prep3_time=$(bc <<< "$prep3_time/$delta_t")
 prep3_printfreq=$(bc <<< "$prep3_printfreq/$delta_t")
 run1_time=$(bc <<< "$run1_time/$delta_t")
 run_printfreq=$(bc <<< "$run_printfreq/$delta_t")
+inc_time=$(bc <<< "$inc_time/$delta_t")
+half_time=$(bc <<< "$half_time/$delta_t")
 
 # Make execution directory
 run_dir="${run_dir}/${sim_name}"
@@ -121,16 +132,8 @@ lammps_file="${sim_name}.lam"
 file="${run_dir}/${lammps_file}"
 
 # Choose template depending on the type of wall used
-if [ $wall == "bead" ]; then
-    echo "Copying bead wall lammps script"
-    cp Cluster-bead.lam $file
-elif [$wall == "transition" ]; then
-    echo "Copying transition lammps script"
-    cp Cluster-transition.lam $file
-else
-    echo "Copying lj wall lammps script"
-    cp Cluster-ljwall.lam $file
-fi
+echo "Copying hysteresis lammps script"
+cp Cluster-hysteresis.lam $file
 
 # Replace macros in template with input values
 sed -i -- "s/INIT_FILE/${init_file}/g" $file
@@ -177,6 +180,10 @@ sed -i -- "s/RUN_OUTFILE/${run_outfile}/g" $file
 sed -i -- "s/RUN1_SEED/${run1_seed}/g" $file
 sed -i -- "s/RUN1_TIME/${run1_time}/g" $file
 
+sed -i -- "s/INC_TIME/${inc_time}/g" $file
+sed -i -- "s/HALF_TIME/${half_time}/g" $file
+sed -i -- "s/MAXITER/${max_iter}/g" $file
+
 sed -i -- "s/LAM_ATOMS/${lam_atoms}/g" $file
 sed -i -- "s/LAM_SEED/${lam_seed}/g" $file
 
@@ -189,6 +196,9 @@ sed -i -- "s/EHETHET/${e_hethet_norm}/g" $file
 sed -i -- "s/EHETLAM/${e_hetlam_norm}/g" $file
 sed -i -- "s/EEUEU/${e_eueu_norm}/g" $file
 sed -i -- "s/ECENT/${e_cent_norm}/g" $file
+
+sed -i -- "s/ESTART/${e_start_norm}/g" $file
+sed -i -- "s/EINC/${e_inc_norm}/g" $file
 
 sed -i -- "s/SIGMA/${sigma}/g" $file
 

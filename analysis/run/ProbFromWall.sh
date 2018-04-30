@@ -13,7 +13,7 @@ N=6303
 Nhet=3079
 Neu=2923
 Ncent=301
-bead_type="het"
+bead_type="all"
 
 L=40
 chr=20
@@ -39,7 +39,8 @@ do
     ehl=$(python -c "print '%.1f' % ($ehl_start)")
     while (( $(bc <<< "$ehl < $ehl_end") ))
     do
-	name="sene_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
+	name="wall_L_${L}_HH_${ehh}_HL_${ehl}"
+#	name="sene_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
 	pos_file="${in_dir}/pos_${name}"*.dat
 	out_file="${out_dir}/wall-prob_${name}.dat"
 	cmd[$jobid]="$prob_exe $N $L $L $L $min $max $binsize $bead_type $t_start $t_end $t_inc $out_file ${pos_file}"

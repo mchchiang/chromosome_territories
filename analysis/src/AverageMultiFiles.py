@@ -4,7 +4,7 @@ import math
 
 args = sys.argv
 
-if (args < 7):
+if (len(args) < 7):
     print "Usage: AverageMultiFiles.py [ref_col] [avg_col] [err_col] " \
         "[startpt] [output_file] [data_files]"
     sys.exit(1)

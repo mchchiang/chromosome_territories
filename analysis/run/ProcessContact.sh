@@ -41,7 +41,7 @@ do
 	
 #	echo "Remove centromeric region ..."
 	# This assumes the bead index starts from 0 (not 1)
-#	awk '{if (($1>=527&&$1<=587)||($2>=527&&$2<=587)) {$3=0.0; print} else {print} }' $contact_file > $nocent_file
+#	awk '{if (($1>=515&&$1<=595)||($2>=515&&$2<=595)) {$3=0.0; print} else {print} }' $contact_file > $nocent_file
 	
 #	echo "Normalising ..."
 #	$norm_exe $N $matrix_mode $nocent_file $norm_file

@@ -1,7 +1,5 @@
-/* Gen_Chr_Het.cpp
- * This is a code that generaetes a chromosome with heterchromatin
- * (determined by the signal of H3K9me) and laminar contact (LaminB signal)
- * info encoded
+/* Get_ChIPSeq.cpp
+ * This is a code that outputs the ChIP-seq signal for H3K9me3 and H3K27me3
  */
 
 #include <iostream>
@@ -21,28 +19,26 @@ using std::cin;
 using std::endl;
 using std::vector;
 using std::string;
+using std::ifstream;
+using std::ofstream;
 using std::shared_ptr;
 using std::make_shared;
 
 int getBeadType(double fracOfLam, double fracOfHet);
 
 int main(int argc, char * argv[]){
-  if (argc < 11){
+  if (argc < 7){
     cout << "Not enough arguments! Generation aborted." << endl;
   }
 
-  string chromoFile (argv[1]);
-  string lamFile (argv[2]);
-  string hetFile (argv[3]);
-  int chrNum = stoi(string(argv[4]), nullptr, 10); // Between 1 and 46
-  double lx = stod(string(argv[5]), nullptr);
-  double ly = stod(string(argv[6]), nullptr);
-  double lz = stod(string(argv[7]), nullptr);
-  double buffer = stod(string(argv[8]), nullptr);
-  string outFile (argv[9]);
-  string outMapFile (argv[10]);
-
-
+  int argi {};
+  string chromoFile (argv[++argi]);
+  string lamFile (argv[++argi]);
+  string h3k9File (argv[++argi]);
+  string h3k27File (argv[++argi]);
+  int chrNum {stoi(string(argv[++argi]), nullptr, 10)}; // Between 1 and 46
+  string outFile (argv[++argi]);
+  
   const int haploidNum {23}; // For human
   const int numOfFibres {haploidNum*2};
 
@@ -73,15 +69,18 @@ int main(int argc, char * argv[]){
     chromoReader >> index >> length;
     fibreLength[i] = static_cast<int>(ceil(length / bpPerBead));
   }
+  chromoReader.close();
 
   // Create vectors for storing laminar contact and heterochromatic region
   vector< vector<double> > fracOfLam {};
-  vector< vector<double> > fracOfHet {};
+  vector< vector<double> > fracOfH3K9 {};
+  vector< vector<double> > fracOfH3K27 {};
 
   for (int i {}; i < numOfFibres; i++){
     vector<double> vec (fibreLength[i], 0.0);
     fracOfLam.push_back(vec);
-    fracOfHet.push_back(vec);
+    fracOfH3K9.push_back(vec);
+    fracOfH3K27.push_back(vec);
   }
 
   // Read the bioinformatics files (laminar and HET)
@@ -92,48 +91,26 @@ int main(int argc, char * argv[]){
   readOK = dataMan.getFracContent(lamFile, fracOfLam, 1, -1, 1, 2, 3, -1, 4);
   if (!readOK) return 1;
 
-  // Read H3K9me3 (heterochromatin) file for GM12878 cell line
+  // Read H3K9me3 (constitutive heterochromatin) file
   //  readOK = dataMan.getFracContent(hetFile, fracOfHet, 1, 0, 1, 2, 3, 5, 10);
-  // Read H3K9me3 (heterochromatin) file for IMR90 cell line
-  readOK = dataMan.getFracContent(hetFile, fracOfHet, 0, 0, 0, 1, 2, 4, 10);
+  readOK = dataMan.getFracContent(h3k9File, fracOfH3K9, 0, 0, 0, 1, 2, 4, 10);
   if (!readOK) return 1;
 
-  // Generate polymer
-  shared_ptr<LAMMPS> lammps = make_shared<LAMMPS>(lx, ly, lz);
-  shared_ptr<Polymer> polymer {};
-  shared_ptr<Bead> bead {};
+  // Read H3K27me3 (facultative heterochromatin) file
+  readOK = dataMan.getFracContent(h3k27File, fracOfH3K27, 0, 0, 0, 1, 2, 4, 10);
+  if (!readOK) return 1;
   
-  lammps->setTypesOfBeads(4);
-  lammps->setTypesOfBonds(1);
-  lammps->setTypesOfAngles(1);
-
-  polymer = lammps->createRandomWalkPolymer(chrNum, fibreLength[chrNum-1], 0, 
-					    0.0, 0.0, 0.0, 
-					    lx-buffer, ly-buffer, lz-buffer);
-  for (int i {}; i < fibreLength[chrNum-1]; i++){
-    bead = lammps->getPolymer(chrNum)->getBead(i);
-    bead->setLabel(chrNum);
-    bead->setType(getBeadType(fracOfLam[chrNum-1][i], fracOfHet[chrNum-1][i]));
-  }
-
   // Write the input file
-  lammps->exportData(outFile, outMapFile);
-}
-
-int getBeadType(double fracOfLam, double fracOfHet){
-  const int neutral {1};
-  const int lam {2};
-  const int het {2};
-
-  if (fracOfLam > 0.0 && fracOfHet > 0.0){
-    if (fracOfHet > 2.0*fracOfLam){
-      return het;
-    }
-    return lam;
-  } else if (fracOfLam > 0.0){
-    return lam;
-  } else if (fracOfHet > 0.0){
-    return het;
+  ofstream writer;
+  writer.open(outFile);
+  if (!writer){
+    cout << "Problem with opening the output file!" << endl;
   }
-  return neutral;
+  
+  for (int i {}; i < fibreLength[chrNum-1]; i++){
+    writer << i << " " << fracOfLam[chrNum-1][i] << " "
+	   << fracOfH3K9[chrNum-1][i] << " "
+	   << fracOfH3K27[chrNum-1][i] << endl;
+  }
+  writer.close();
 }
