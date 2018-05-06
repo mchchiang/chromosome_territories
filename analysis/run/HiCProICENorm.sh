@@ -51,12 +51,14 @@ echo "Converting result to full matrix ..."
 $convert_exe $N upper full ${out_dir}/${name}_50000_iced.matrix ${out_dir}/${name}_avg_nocent_ice.dat
 
 # Renormalise the contact matrix such that each column/row sums (close) to 1
-# Find the average column sum
+# Find the max column sum
 echo "Renormalising contact matrix ..."
-avg=$(awk '{if (NF==3) {if ($1 > max) {max = $1}; arr[$1]+=$3}} END {for (i = 0; i <= max; i++) {sum += arr[i]; if (arr[i]!=0) count++} print sum/count}' ${out_dir}/${name}_avg_nocent_ice.dat)
+#avg=$(awk '{if (NF==3) {if ($1 > max) {max = $1}; arr[$1]+=$3}} END {for (i = 0; i <= max; i++) {sum += arr[i]; if (arr[i]!=0) count++} print sum/count}' ${out_dir}/${name}_avg_nocent_ice.dat)
 
-# Normalise the map by this average value
-awk -v norm="$avg" '{if (NF==3){printf("%d %d %.10g\n", $1, $2, $3/norm)} else {print}}' ${out_dir}/${name}_avg_nocent_ice.dat > ${out_dir}/${name}_avg_nocent_ice_norm.dat
+max=$(awk '{if (NF==3) {if ($1 > max) {max = $1}; arr[$1]+=$3}} END {for (i = 0; i <= max; i++) {if (arr[i] > maxCount) {maxCount = arr[i]}} print maxCount}' ${out_dir}/${name}_avg_nocent_ice.dat)
+
+# Normalise the map by this max value
+awk -v norm="$max" '{if (NF==3){printf("%d %d %.10g\n", $1, $2, $3/norm)} else {print}}' ${out_dir}/${name}_avg_nocent_ice.dat > ${out_dir}/${name}_avg_nocent_ice_norm.dat
 
 # Clean up
 echo "Clean up ..."
