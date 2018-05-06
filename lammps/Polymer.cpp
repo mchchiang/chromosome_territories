@@ -5,6 +5,7 @@
 #include <memory>
 #include <cstdlib>
 #include <cmath>
+#include <random>
 #include <armadillo>
 #include "Bead.hpp"
 #include "Bond.hpp"
@@ -162,7 +163,10 @@ shared_ptr<Polymer> Polymer::createRandomWalkPolymer(int nBeads, int beadType,
 						     double z0, double lx, 
 						     double ly, double lz){
   // Initialise the random number generator
-  srand(time(NULL));
+  //  srand(time(NULL));
+  std::random_device rd;
+  std::mt19937 mt(rd());
+  std::uniform_real_distribution<double> randDouble(0,1.0);
   double pi {M_PI};
   shared_ptr<Polymer> polymer = make_shared<Polymer>(nBeads, beadType);
   double x, y, z, r, costheta, sintheta, phi;
@@ -178,10 +182,12 @@ shared_ptr<Polymer> Polymer::createRandomWalkPolymer(int nBeads, int beadType,
   for (int i {1}; i < nBeads; i++){
     current = polymer->getBead(i);
     do {
-      r = getRand();
+      //r = getRand();
+      r = randDouble(mt);
       costheta = 1.0-2.0*r;
       sintheta = sqrt(1-costheta*costheta);
-      r = getRand();
+      //r = getRand();
+      r = randDouble(mt);
       phi = 2.0*pi*r;
       x = previous->getPosition(0) + sintheta * cos(phi);
       y = previous->getPosition(1) + sintheta * sin(phi);
@@ -203,7 +209,10 @@ shared_ptr<Polymer> Polymer::createRosettePolymer(int nBeads, int beadType,
 						  double z0, double lx,
 						  double ly, double lz){
   // Initialise the random number generator
-  srand(time(NULL));
+  //srand(time(NULL));
+  std::random_device rd;
+  std::mt19937 mt(rd());
+  std::uniform_real_distribution<double> randDouble(0,1.0);
   double pi {M_PI};
   shared_ptr<Polymer> polymer = make_shared<Polymer>(nBeads, beadType);
   double tInc = beadsPerTurn / (2.0*pi);
@@ -226,9 +235,12 @@ shared_ptr<Polymer> Polymer::createRosettePolymer(int nBeads, int beadType,
   while (outOfBound){
 	outOfBound = false;
 	// Gernerate random number
-	x1 = getRand();
-	x2 = getRand();
-	x3 = getRand();
+	//x1 = getRand();
+	//x2 = getRand();
+	//x3 = getRand();
+	x1 = randDouble(mt);
+	x2 = randDouble(mt);
+	x3 = randDouble(mt);
 
 	// Generate rotation
 	rotate = randRotation(x1, x2, x3);
