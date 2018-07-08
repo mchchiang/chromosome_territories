@@ -76,8 +76,41 @@ int LAMMPS::getNumOfBeads(){
   return total;
 }
 
-int getNumOfBonds(){return 0;}
-int getNumOfAngles(){return 0;}
+int getNumOfBonds(){
+  int nbaeds {}, total {};
+  shared_ptr<Polymer> polymer;
+  shared_ptr<Bead> bead;
+  for (auto const& p : polymers){
+	polymer = p.second;
+	nbeads = polymer->getNumOfBeads();
+	for (int i {}; i < nbeads; i++){
+	  total += polymer->getBead(i)->getNumOfBonds();
+	}
+  }
+  for (auto const& b : beads){
+	bead = b.second;
+	total += bead->getNumOfBonds();
+  }
+  return total/2;
+}
+
+int getNumOfAngles(){
+  int nbaeds {}, total {};
+  shared_ptr<Polymer> polymer;
+  shared_ptr<Bead> bead;
+  for (auto const& p : polymers){
+	polymer = p.second;
+	nbeads = polymer->getNumOfBeads();
+	for (int i {}; i < nbeads; i++){
+	  total += polymer->getBead(i)->getNumOfAngles();
+	}
+  }
+  for (auto const& b : beads){
+	bead = b.second;
+	total += bead->getNumOfAngles();
+  }
+  return total/3;
+}
 
 void LAMMPS::setTypesOfBeads(int type){
   typesOfBeads = type;

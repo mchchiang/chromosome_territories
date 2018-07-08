@@ -82,12 +82,53 @@ int Polymer::getNumOfBeads(){
 }
 
 // Adding or removing beads
-void Polymer::addBead(shared_ptr<Bead> bead){
-  beads.push_back(bead);
+void Polymer::addBead(int bondType, int angleType, shared_ptr<Bead> bead){
+  addBead(getNumOfBeads(), bondType, angleType, bead);
 }
 
-void Polymer::addBead(int id, shared_ptr<Bead> bead){
+void Polymer::addBead(int id, int bondType, int angleType,
+					  shared_ptr<Bead> bead){
+
+  int nbeads {getNumOfBeads()};
+
+  // Check that the id is within the valid range
+  if (id < 0 || id > nbeads)
+	return;
+  
   beads.insert(beads.begin()+id, bead);
+  nbeads++;
+
+  // Make sure the polymer remains connected by removing/adding bonds/angles
+  if (id == 0){
+	bead->addBondWith(bondType, beads[1]);
+	bead->addAnglewith(angleType, beads[1], beads[2]);
+  } else if (id == nbeads-1){
+	bead->addBondWith(bondType, beads[nbeads-2]);
+	bead->addAngleWith(angleType, beads[nbeads-2], beads[nbeads-3]);
+  } else if (id == 1){
+	bead->addBondWith(bondType, beads[0]);
+	bead->addBondWith(bondType, beads[2]);
+	bead->addAngleWith(angleType, beads[0], beads[2]);
+	bead->addAngleWith(angleType, beads[2], beads[3]);
+	beads[0]->removeBondWith(beads[2]);
+	beads[0]->removeAngleWith(beads[2], beads[3]);
+  } else if (id == nbeads-2){
+	bead->addBondWith(bondType, beads[nbeads-1]);
+	bead->addBondWith(bondType, beads[nbeads-3]);
+	bead->addAngleWith(angleType, beads[nbeads-1], beads[nbeads-3]);
+	bead->addAngleWith(angleType, beads[nbeads-3], beads[nbeads-4]);
+	beads[nbeads-1]->removeBondWith(beads[nbeads-3]);
+	beads[nbeads-1]->removeAngleWith(beads[nbeads-3], beads[nbeads-4]);
+  } else if (id > 1 && id < nbeads-2){
+	bead->addBondWith(bondType, beads[id-1]);
+	bead->addBondWith(bondType, beads[id+1]);
+	bead->addAngleWith(angleType, beads[id-2], beads[id-1]);
+	bead->addAngleWith(angleType, beads[id-1], beads[id+1]);
+	bead->addAngleWith(angleType, beads[id+1], beads[id+2]);
+	beads[id-1]->removeBondWith(beads[id+1]);
+	beads[id-2]->removeAngleWith(beads[id-1], beads[id+1]);
+	beads[id-1]->removeAngleWith(beads[id+1], beads[id+2]);
+  }
 }
 
 void Polymer::removeBead(int id){
@@ -111,7 +152,7 @@ void Polymer::removeBead(int id){
   beads[id]->removeAllBonds();
   beads[id]->removeAllAngles();
   
-  // Make sure the polymer remains connected
+  // Make sure the polymer remains connected by adding bonds/angles
   beads[id-1]->addBondWith(bondType, beads[id+1]);
   beads[id-2]->addAngleWith(angleType, beads[id-1], beads[id+1]);
   beads[id-1]->addAngleWith(angleType, beads[id+1], beads[id+2]);

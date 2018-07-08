@@ -39,6 +39,8 @@ public:
   int getType();
   void setLabel(int label);
   int getLabel();
+  int getNumOfBonds();
+  int getNumOfAngles();
   shared_ptr<Bond> getBondWith(shared_ptr<Bead> bead);
   shared_ptr<Angle> getAngleWith(shared_ptr<Bead> bead1, 
 				 shared_ptr<Bead> bead2);

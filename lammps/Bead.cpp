@@ -74,6 +74,14 @@ int Bead::getLabel(){
   return label;
 }
 
+int Bead::getNumOfBonds(){
+  return bondList.size();
+}
+
+int Bead::getNumOfAngles(){
+  return angleList.size();
+}
+
 shared_ptr<Bond> Bead::getBondWith(shared_ptr<Bead> bead){
   for (BondIterator it = bondList.begin(); it != bondList.end(); it++){
     shared_ptr<Bond> bond = *it;
