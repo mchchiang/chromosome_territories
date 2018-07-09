@@ -76,8 +76,8 @@ int LAMMPS::getNumOfBeads(){
   return total;
 }
 
-int getNumOfBonds(){
-  int nbaeds {}, total {};
+int LAMMPS::getNumOfBonds(){
+  int nbeads {}, total {};
   shared_ptr<Polymer> polymer;
   shared_ptr<Bead> bead;
   for (auto const& p : polymers){
@@ -94,8 +94,8 @@ int getNumOfBonds(){
   return total/2;
 }
 
-int getNumOfAngles(){
-  int nbaeds {}, total {};
+int LAMMPS::getNumOfAngles(){
+  int nbeads {}, total {};
   shared_ptr<Polymer> polymer;
   shared_ptr<Bead> bead;
   for (auto const& p : polymers){

@@ -31,6 +31,8 @@ public:
   int getNumOfBeads();
 
   // For changing the polymer
+  void addBead(shared_ptr<Bead> bead);
+  void addBead(int id, shared_ptr<Bead> bead);
   void addBead(int bondType, int angleType, shared_ptr<Bead> bead);
   void addBead(int id, int bondType, int angleType, shared_ptr<Bead> bead);
   void removeBead(int id);
