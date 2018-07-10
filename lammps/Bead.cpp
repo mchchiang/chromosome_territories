@@ -11,6 +11,7 @@
 using std::cout;
 using std::endl;
 using std::pair;
+using std::weak_ptr;
 using std::shared_ptr;
 using std::make_shared;
 using BondIterator = vector<shared_ptr<Bond> >::iterator;
@@ -121,7 +122,7 @@ void Bead::addBond(shared_ptr<Bond> bond){
 }
 
 void Bead::addBondWith(int t, shared_ptr<Bead> bead){
-  shared_ptr<Bond> bond = make_shared<Bond>(t, shared_from_this(), bead);
+  shared_ptr<Bond> bond {make_shared<Bond>(t, shared_from_this(),bead)};
   bead->addBond(bond);
   addBond(bond);
 }
@@ -149,8 +150,8 @@ void Bead::addAngle(shared_ptr<Angle> angle){
 
 void Bead::addAngleWith(int t, 
 			shared_ptr<Bead> bead1, shared_ptr<Bead> bead2){
-  shared_ptr<Angle> angle = 
-    make_shared<Angle>(t, shared_from_this(), bead1, bead2);
+  shared_ptr<Angle> angle {
+    make_shared<Angle>(t, shared_from_this(), bead1, bead2)};
   bead1->addAngle(angle);
   bead2->addAngle(angle);
   addAngle(angle);

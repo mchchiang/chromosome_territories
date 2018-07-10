@@ -4,16 +4,18 @@
 #include "Bead.hpp"
 #include "Angle.hpp"
 
+using std::weak_ptr;
 using std::shared_ptr;
 
 // Constructor
 Angle::Angle(int t, shared_ptr<Bead> b1, 
 	     shared_ptr<Bead> b2, shared_ptr<Bead> b3) :
-  type {t}, beads {b1, b2, b3} {}
+  type {t}, beads {weak_ptr<Bead>(b1), weak_ptr<Bead>(b2), 
+		weak_ptr<Bead>(b3)} {}
 
 // Accessor methods
 shared_ptr<Bead> Angle::getBead(int id){
-  return beads[id];
+  return beads[id].lock();
 }
 
 void Angle::setType(int t){
@@ -24,8 +26,3 @@ int Angle::getType(){
   return type;
 }
 
-void Angle::unbond(){
-  for (int i {}; i < numOfBeads; i++){
-    beads[i]->removeAngle(shared_from_this());
-  }
-}

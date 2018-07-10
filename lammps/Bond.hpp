@@ -8,6 +8,7 @@
 
 #include <memory>
 
+using std::weak_ptr;
 using std::shared_ptr;
 
 class Bead; // Forward declaration to break cyclic references
@@ -17,7 +18,7 @@ class Bond : public std::enable_shared_from_this<Bond> {
 private:
   const int numOfBeads {2};
   int type;
-  shared_ptr<Bead> beads[2];
+  weak_ptr<Bead> beads[2];
   
 public:
   // Constructor
@@ -28,7 +29,6 @@ public:
   void setType(int type);
   int getType();
   
-  void unbond();
 };
 
 #endif
