@@ -1,0 +1,145 @@
+# Cluster-hysteresis.lam - same as Senescence.lam but without aging part
+
+##################################################
+
+# Variables and definitions
+
+variable btime equal (step*DELTA_T)
+
+##################################################
+##################################################
+# PART 4 - Actual simulation - interaction with laminar
+##################################################
+##################################################
+
+# Start from scratch
+
+clear
+
+##################################################
+
+# Simulation basic definitions
+
+units lj
+atom_style angle
+boundary p p f
+neighbor 1.1 bin
+neigh_modify every 1 delay 1 check yes
+
+read_data INIT_FILE
+
+##################################################
+
+# Define groups
+
+group nomob type 3 # Lamin beads
+group mobil subtract all nomob # Chromosome beads
+
+##################################################
+
+# Simulation box definition -- repulsive at the boundary
+
+change_box all x final XLO XHI y final YLO YHI & 
+z final ZLO ZHI  boundary p p f units box
+fix WALL mobil wall/lj126 zhi EDGE 1.0 1.0 1.122462048 &
+zlo EDGE 1.0 1.0 1.122462048 units box
+
+##################################################
+
+# Bond potential
+
+bond_style fene
+special_bonds fene
+bond_coeff 1 30.0 1.6 1.0 1.0
+
+##################################################
+
+# Angle potential
+
+angle_style cosine
+angle_coeff 1 3.0
+
+##################################################
+
+# Pairwise interactions (Switch on same-type interactions)
+
+pair_style lj/cut 1.12246152962189
+pair_modify shift yes
+pair_coeff * * 1.0 1.0 1.12246152962189
+
+variable ehl equal EHETLAM
+
+# Set the types of interactions HL and HH
+
+# Both LAD and HET beads attract with laminar
+if "EHETHET > 0.0" then &
+   "pair_coeff 2 2 EHETHET SIGMA CUTOFF"
+if "EHETLAM > 0.0" then &
+   "pair_coeff 2 3 EHETLAM SIGMA CUTOFF"
+
+# No interaections for lamin beads
+pair_coeff 3 3 0.0 0.0 0.0 
+
+##################################################
+
+# Set Brownian dynamics
+
+fix 1 mobil nve
+fix 2 mobil langevin 1.0 1.0 1.0 RUN1_SEED
+
+##################################################
+
+# Integrator
+
+timestep DELTA_T
+
+##################################################
+
+# Parallel computation details
+
+comm_style tiled
+fix bal all balance 100000 1.1 rcb
+
+##################################################
+
+# Dumps/output
+
+compute gyr mobil gyration
+thermo RUN_PRINTFREQ
+thermo_style custom v_btime temp epair vol c_gyr v_ehl
+dump 1 mobil custom RUN_PRINTFREQ RUN_OUTFILE id type x y z ix iy iz
+restart RESTART_FREQ RESTART_FILE
+
+##################################################
+
+reset_timestep 0
+
+# Start varying HL energy
+
+variable einc equal EINC
+variable ehl equal ESTART
+variable halftime equal (HALF_TIME*DELTA_T)
+
+variable loopindex loop MAXITER
+
+label loop
+
+run INC_TIME
+
+# Change the energy
+
+if "${btime} <= ${halftime}" then &
+   "variable ehl equal (${ehl}+${einc})" &
+else &
+   "variable ehl equal (${ehl}-${einc})"
+
+if "${ehl} > 0.0" then &
+   "pair_coeff 2 3 ${ehl} SIGMA CUTOFF"
+
+next loopindex
+
+jump SELF loop
+
+write_data RUN1_SIMFILE nocoeff
+
+##################################################

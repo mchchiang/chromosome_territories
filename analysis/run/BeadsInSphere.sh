@@ -16,7 +16,7 @@ N=6303
 Nhet=3079
 Neu=2923
 Ncent=301
-bead_type="het"
+bead_type="all"
 
 L=40
 chr=20

@@ -16,11 +16,10 @@ ehh=$(python -c "print '%.1f' % ($ehh_start)")
 ehl=$(python -c "print '%.1f' % ($ehl_start)")
 
 source 'runconfig.cfg'
-frac_exe="${bin}/contact/exe/ContactFraction"
+pos_exe="${bin}/contact/exe/PositionFromWall"
 
 # Selection arguments
-wall_dist=3.0
-bead_type="all"
+bead_type="het"
 t_start=0
 t_end=200000
 t_inc=1000
@@ -45,8 +44,8 @@ do
 	do
 	    name="sene_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}_run_${run}"
 	    pos_file="${in_dir}/pos_${name}.dat"
-	    frac_file="${out_dir}/wall-frac_${name}.dat"
-	    cmd[$jobid]="$frac_exe $N $Neu $Nhet $L $L $L $wall_dist $bead_type $t_start $t_end $t_inc $pos_file $frac_file"
+	    frac_file="${out_dir}/zpos_${name}.dat"
+	    cmd[$jobid]="$pos_exe $N $Neu $Nhet $L $L $L $bead_type $t_start $t_end $t_inc $pos_file $frac_file"
 	    jobid=$(bc <<< "$jobid + 1")
 
 	done

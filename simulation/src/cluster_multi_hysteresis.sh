@@ -12,8 +12,8 @@ run_inc=$9
 init_mode=${10}
 dir=${11}
 
-ehh=$(python -c "print '%.1f' % ($ehh_start)")
-ehl=$(python -c "print '%.1f' % ($ehl_start)")
+ehh=$ehh_start
+ehl=$ehl_start
 run=$run_start
 
 while (( $(bc <<< "$ehh<=$ehh_end") ))
@@ -24,7 +24,7 @@ do
 	for (( run=$run_start; $run<=$run_end; run+=$run_inc ))
 	do
 	    echo "Creating files for HH = $ehh HL = $ehl run = $run"
-	    bash cluster_init.sh $ehh $ehl $run $init_mode $dir
+	    bash cluster_hysteresis.sh $ehh $ehl $run $init_mode $dir
 	done
 	ehl=$(python -c "print '%.1f' % ($ehl + $ehl_inc)")
     done

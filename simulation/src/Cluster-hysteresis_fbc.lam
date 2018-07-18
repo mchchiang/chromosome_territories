@@ -198,10 +198,14 @@ unfix wall
 # Change simulation box
 
 change_box all x final XLO XHI y final YLO YHI & 
-z final ZLO ZHI  boundary p p f units box
+z final ZLO ZHI  boundary f f f units box
 fix wall all wall/lj126 &
-zhi EDGE 1.0 1.0 1.122462048 &
-zlo EDGE 1.0 1.0 1.122462048 units box
+xlo EDGE 1.0 1.0 1.122462048 &
+xhi EDGE 1.0 1.0 1.122462048 &
+ylo EDGE 1.0 1.0 1.122462048 &
+yhi EDGE 1.0 1.0 1.122462048 &
+zlo EDGE 1.0 1.0 1.122462048 &
+zhi EDGE 1.0 1.0 1.122462048 units box
 
 ##################################################
 
@@ -279,7 +283,7 @@ clear
 
 units lj
 atom_style angle
-boundary p p f
+boundary f f f
 neighbor 1.1 bin
 neigh_modify every 1 delay 1 check yes
 
@@ -297,9 +301,14 @@ group mobil subtract all nomob # Chromosome beads
 # Simulation box definition -- repulsive at the boundary
 
 change_box all x final XLO XHI y final YLO YHI & 
-z final ZLO ZHI  boundary p p f units box
-fix WALL mobil wall/lj126 zhi EDGE 1.0 1.0 1.122462048 &
-zlo EDGE 1.0 1.0 1.122462048 units box
+z final ZLO ZHI  boundary f f f units box
+fix WALL mobil wall/lj126 &
+xlo EDGE 1.0 1.0 1.122462048 &
+xhi EDGE 1.0 1.0 1.122462048 &
+ylo EDGE 1.0 1.0 1.122462048 &
+yhi EDGE 1.0 1.0 1.122462048 &
+zlo EDGE 1.0 1.0 1.122462048 &
+zhi EDGE 1.0 1.0 1.122462048 units box
 
 ##################################################
 

@@ -117,11 +117,17 @@ int main(int argc, char* argv[]){
       }
       
       double z;
+      double zwall {lz/2.0};
       for (int i {}; i < numOfBeads; i++){
-	z = lz/2.0-reader.getUnwrappedPosition(i, 2);
+	//	z = lz/2.0-reader.getUnwrappedPosition(i, 2);
+	z = reader.getUnwrappedPosition(i, 2);
 	(*localBeadsInSphere)[i] += (*localCount)[i];
 	(*distalBeadsInSphere)[i] += (*distalCount)[i];
-	volume = enclosedVolume(cutoff, cutoff-z);
+	if (fabs(z) > zwall-cutoff){
+	  volume = enclosedVolume(cutoff, cutoff-(zwall-fabs(z)));
+	} else {
+	  volume = enclosedVolume(cutoff, 0.0);
+	}
 	(*localDensity)[i] += static_cast<double>((*localCount)[i])/volume;
 	(*distalDensity)[i] += static_cast<double>((*distalCount)[i])/volume;
       }

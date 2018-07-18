@@ -14,11 +14,11 @@ e_eueu=0.4
 e_cent=0.4
 
 # HL energy varying interval
-e_hetlam=10.0 # initial quick quench to bring the system to growing phase
-e_inc=-0.1
-half_time=10000
-inc_time=2000
-max_iter=$(bc <<< "$half_time*2.0/$inc_time")
+e_hetlam=$e_start # initial quick quench to bring the system to growing phase
+e_inc=-0.02
+half_time=700000
+inc_time=10000
+max_iter=$(bc <<< "$half_time*2.0/$inc_time+1")
 
 # Init config (default is random walk)
 gen_chromo_exe="../bin/exe/Gen_Chr_Het"
@@ -28,7 +28,8 @@ fi
 
 chromo_file="../../data/chromo_length.dat"
 lam_file="../../data/LAD.Pk.genome.full.dat"
-het_file="../../data/IMR90.H3K9me3.Pk.full.dat"
+#het_file="../../data/IMR90.H3K9me3.Pk.full.dat"
+het_file="../../data/GM12878.H3K9me3.Pk.full.dat"
 chr_num=20
 
 init_box_size=100
@@ -45,25 +46,25 @@ hi=$(bc <<< "$box_size/2.0")
 
 max_seed=100000
 
-restart_freq=1000
+restart_freq=10000
 
 prep1_printfreq=1000
 prep1_seed=$(python GetRandom.py $max_seed)
-prep1_time_1=1000 # 4000
-prep1_time_2=1000 # 4000
-prep1_time_3=1000 # 2000
+prep1_time_1=4000 # 4000
+prep1_time_2=4000 # 4000
+prep1_time_3=2000 # 2000
 
 prep2_printfreq=1000
 prep2_seed=$(python GetRandom.py $max_seed)
-prep2_time=1000 # 5000
+prep2_time=5000 # 5000
 
 prep3_printfreq=1000
 prep3_seed=$(python GetRandom.py $max_seed)
-prep3_time=1000 # 5000
+prep3_time=5000 # 5000
 
 run_printfreq=1000
 run1_seed=$(python GetRandom.py $max_seed)
-run1_time=1000
+run1_time=200000
 
 lam_atoms=2500
 lam_seed=$(python GetRandom.py $max_seed)
@@ -96,7 +97,7 @@ e_start_norm=$(python -c "print '%.13f' % ($e_start/$norm)")
 e_inc_norm=$(python -c "print '%.13f' % ($e_inc/$norm)")
 
 # Set output file names
-sim_name="sene_chr_${chr_num}_L_${box_size}_HH_${e_hethet}_HL_${e_hetlam}_run_${run}"
+sim_name="sene_chr_${chr_num}_L_${box_size}_HH_${e_hethet}_HL_${e_start}_run_${run}"
 init_file="init_${sim_name}.in"
 restart_file="restart_${sim_name}"
 prep1_outfile="prep1_${sim_name}.lammpstrj"
@@ -130,10 +131,9 @@ mkdir $run_dir
 # Create the lammps command file based on template
 lammps_file="${sim_name}.lam"
 file="${run_dir}/${lammps_file}"
-
-# Choose template depending on the type of wall used
-echo "Copying hysteresis lammps script"
-cp Cluster-hysteresis.lam $file
+#cp Cluster-hysteresis.lam $file
+cp Cluster-hysteresis_pbc.lam $file
+#cp Cluster-hysteresis_fbc.lam $file
 
 # Replace macros in template with input values
 sed -i -- "s/INIT_FILE/${init_file}/g" $file
@@ -213,5 +213,5 @@ sed -i -- "s/RUN1_SIMFILE/${run1_simfile}/g" $file
 ${gen_chromo_exe} $chromo_file $lam_file $het_file $chr_num $init_box_size $init_box_size $init_box_size $buffer "${run_dir}/${init_file}" "${run_dir}/${map_file}"
 
 # Relabel centromere region
-awk '{if (NR>2603&&NR<3005) {$3=4; print} else {print}}' ${run_dir}/${init_file} > ${run_dir}/temp
-mv ${run_dir}/temp ${run_dir}/${init_file}
+#awk '{if (NR>2603&&NR<3005) {$3=4; print} else {print}}' ${run_dir}/${init_file} > ${run_dir}/temp
+#mv ${run_dir}/temp ${run_dir}/${init_file}

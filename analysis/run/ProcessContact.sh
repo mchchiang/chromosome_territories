@@ -34,17 +34,18 @@ do
 	name="sene_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
 	contact_file="${dir}/contact_${name}_avg.dat"
 	nocent_file="${dir}/contact_${name}_avg_nocent.dat"
-	norm_file="${dir}/contact_${name}_avg_nocent_ice_norm.dat"
-	eigen_file="${dir}/eigen_${name}_avg_nocent_ice_norm.dat"
-	corr_file="${dir}/corr_${name}_avg_nocent_ice_norm.dat"
-	localdistal_file="${dir}/local-distal_${name}_avg_nocent_ice_norm.dat"
+	norm_file="${dir}/contact_${name}_avg_nocent.dat"
+	eigen_file="${dir}/eigen_${name}_avg_nocent.dat"
+	corr_file="${dir}/corr_${name}_avg_nocent.dat"
+	localdistal_file="${dir}/local-distal_${name}_avg_nocent.dat"
 	
-#	echo "Remove centromeric region ..."
+	echo "Remove centromeric region ..."
 	# This assumes the bead index starts from 0 (not 1)
 #	awk '{if (($1>=515&&$1<=595)||($2>=515&&$2<=595)) {$3=0.0; print} else {print} }' $contact_file > $nocent_file
+	awk '{if (($1>=527&&$1<=587)||($2>=527&&$2<=587)) {$3=0.0; print} else {print} }' $contact_file > $nocent_file
 	
 #	echo "Normalising ..."
-#	$norm_exe $N $matrix_mode $nocent_file $norm_file
+	$norm_exe $N $matrix_mode $nocent_file $norm_file
 
 	echo "Calculating correlation ..."
 	$corr_exe $N $matrix_mode $norm_file $corr_file

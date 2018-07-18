@@ -21,6 +21,7 @@ fi
 
 chromo_file="../../data/chromo_length.dat"
 lam_file="../../data/LAD.Pk.genome.full.dat"
+#het_file="../../data/GM12878.H3K9me3.Pk.full.dat"
 het_file="../../data/IMR90.H3K9me3.Pk.full.dat"
 chr_num=20
 
@@ -203,5 +204,6 @@ sed -i -- "s/RUN1_SIMFILE/${run1_simfile}/g" $file
 ${gen_chromo_exe} $chromo_file $lam_file $het_file $chr_num $init_box_size $init_box_size $init_box_size $buffer "${run_dir}/${init_file}" "${run_dir}/${map_file}"
 
 # Relabel centromere region
-awk '{if (NR>2603&&NR<3005) {$3=4; print} else {print}}' ${run_dir}/${init_file} > ${run_dir}/temp
+#awk '{if (NR>2603&&NR<3005) {$3=4; print} else {print}}' ${run_dir}/${init_file} > ${run_dir}/temp
+awk '{if (NR>2663&&NR<2965) {$3=4; print} else {print}}' ${run_dir}/${init_file} > ${run_dir}/temp
 mv ${run_dir}/temp ${run_dir}/${init_file}
