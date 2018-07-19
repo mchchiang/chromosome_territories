@@ -131,8 +131,14 @@ bool DataManager::getFracContent(const string& file,
       if (startBead == endBead){
 	fracContent = static_cast<double>(end-start)/resolution;
 	fracScore[chromo-1][startBead] += fracContent;
+	if (fracScore[chromo-1][startBead] >= 1.0){
+	  fracScore[chromo-1][startBead] = 1.0;
+	}
 	if (!isHaploid){
 	  fracScore[chromo+haploidNum-1][startBead] += fracContent;
+	  if (fracScore[chromo+haploidNum-1][startBead] >= 1.0){
+	    fracScore[chromo+haploidNum-1][startBead] = 1.0;
+	  }
 	}
 	// For content spread over multiple beads
       } else {
@@ -140,15 +146,27 @@ bool DataManager::getFracContent(const string& file,
 	fracContent = 1.0-(static_cast<double>(start)/resolution
 			   - static_cast<double>(startBead));
 	fracScore[chromo-1][startBead] += fracContent;
+	if (fracScore[chromo-1][startBead] >= 1.0){
+	  fracScore[chromo-1][startBead] = 1.0;
+	}
 	if (!isHaploid){
 	  fracScore[chromo+haploidNum-1][startBead] += fracContent;
+	  if (fracScore[chromo+haploidNum-1][startBead] >= 1.0){
+	    fracScore[chromo+haploidNum-1][startBead] = 1.0;
+	  }
 	}
 	// End bead content
 	fracContent = static_cast<double>(end)/resolution
 	  - static_cast<double>(endBead);
 	fracScore[chromo-1][endBead] += fracContent;
+	if (fracScore[chromo-1][endBead] >= 1.0){
+	  fracScore[chromo-1][endBead] = 1.0;
+	}
 	if (!isHaploid){
 	  fracScore[chromo+haploidNum-1][endBead] += fracContent;
+	  if (fracScore[chromo+haploidNum-1][endBead] >= 1.0){
+	    fracScore[chromo+haploidNum-1][endBead] = 1.0;
+	  }
 	}
 	// Other beads in betweeen are completely coded by the content
 	for (int i {startBead+1}; i < endBead; i++){
