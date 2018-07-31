@@ -4,19 +4,20 @@
 
 # Read in and set parameters
 e_hethet=$1       # HH interaction
-e_start=$2       # HL interaction
-run=$3            # trial number
-init_mode=$4      # rosette-like or random starting config
-run_dir=$5        # run directory
+e_start=$2        # Start HL interaction
+e_end=$3          # End HL interaction
+run=$4            # trial number
+init_mode=$5      # rosette-like or random starting config
+run_dir=$6        # run directory
 
 # Interaction energy for euchromatin and centromere region
-e_eueu=0.4
-e_cent=0.4
+e_eueu=0.0
+e_cent=0.0
 
 # HL energy varying interval
 e_hetlam=$e_start # initial quick quench to bring the system to growing phase
-e_inc=-0.02
-half_time=700000
+e_inc=-0.01
+half_time=1000000
 inc_time=10000
 max_iter=$(bc <<< "$half_time*2.0/$inc_time+1")
 
@@ -95,6 +96,7 @@ e_eueu_norm=$(python -c "print '%.13f' % ($e_eueu/$norm)")
 e_cent_norm=$(python -c "print '%.13f' % ($e_cent/$norm)")
 e_start_norm=$(python -c "print '%.13f' % ($e_start/$norm)")
 e_inc_norm=$(python -c "print '%.13f' % ($e_inc/$norm)")
+e_end_norm=$(python -c "print '%.13f' % ($e_end/$norm)")
 
 # Set output file names
 sim_name="sene_chr_${chr_num}_L_${box_size}_HH_${e_hethet}_HL_${e_start}_run_${run}"
@@ -107,7 +109,8 @@ run_outfile="run_${sim_name}.lammpstrj"
 pos_file="pos_${sim_name}.dat"
 map_file="${sim_name}.lammpsmap"
 equil_simfile="equil_${sim_name}.out"
-run1_simfile="end_${sim_name}.out"
+run1_simfile="equil-w-ehl_${sim_name}.out"
+run2_simfile="end_${sim_name}.out"
 
 # Convert all time values to simulation time (i.e. rescale by delta t)
 restart_freq=$(bc <<< "$restart_freq/$delta_t")
@@ -132,8 +135,9 @@ mkdir $run_dir
 lammps_file="${sim_name}.lam"
 file="${run_dir}/${lammps_file}"
 #cp Cluster-hysteresis.lam $file
-cp Cluster-hysteresis_pbc.lam $file
+#cp Cluster-hysteresis_pbc.lam $file
 #cp Cluster-hysteresis_fbc.lam $file
+cp Cluster-hysteresis_pbc_ramp.lam $file
 
 # Replace macros in template with input values
 sed -i -- "s/INIT_FILE/${init_file}/g" $file
@@ -199,6 +203,7 @@ sed -i -- "s/ECENT/${e_cent_norm}/g" $file
 
 sed -i -- "s/ESTART/${e_start_norm}/g" $file
 sed -i -- "s/EINC/${e_inc_norm}/g" $file
+sed -i -- "s/EEND/${e_end_norm}/g" $file
 
 sed -i -- "s/SIGMA/${sigma}/g" $file
 
@@ -206,7 +211,7 @@ sed -i -- "s/CUTOFF/${cutoff}/g" $file
 
 sed -i -- "s/EQUIL_SIMFILE/${equil_simfile}/g" $file
 sed -i -- "s/RUN1_SIMFILE/${run1_simfile}/g" $file
-
+sed -i -- "s/RUN2_SIMFILE/${run2_simfile}/g" $file
 
 # Generate chromatin
 

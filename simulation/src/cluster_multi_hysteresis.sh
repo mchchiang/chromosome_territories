@@ -1,32 +1,19 @@
 #!/bin/bash
 
-ehh_start=$1
-ehh_end=$2
-ehh_inc=$3
-ehl_start=$4
-ehl_end=$5
-ehl_inc=$6
-run_start=$7
-run_end=$8
-run_inc=$9
-init_mode=${10}
-dir=${11}
+run_start=$1
+run_end=$2
+run_inc=$3
+init_mode=$4
+dir=$5
 
-ehh=$ehh_start
-ehl=$ehl_start
+ehh=1.4
+ehl_start=1.2
+ehl_end=0.6
 run=$run_start
 
-while (( $(bc <<< "$ehh<=$ehh_end") ))
+
+for (( run=$run_start; $run<=$run_end; run+=$run_inc ))
 do
-    ehl=$(python -c "print '%.1f' % ($ehl_start)")
-    while (( $(bc <<< "$ehl<=$ehl_end") ))
-    do
-	for (( run=$run_start; $run<=$run_end; run+=$run_inc ))
-	do
-	    echo "Creating files for HH = $ehh HL = $ehl run = $run"
-	    bash cluster_hysteresis.sh $ehh $ehl $run $init_mode $dir
-	done
-	ehl=$(python -c "print '%.1f' % ($ehl + $ehl_inc)")
-    done
-    ehh=$(python -c "print '%.1f' % ($ehh + $ehh_inc)")
+    echo "Creating files for HH = $ehh HL = $ehl run = $run"
+    bash cluster_hysteresis.sh $ehh $ehl_start $ehl_end $run $init_mode $dir
 done
