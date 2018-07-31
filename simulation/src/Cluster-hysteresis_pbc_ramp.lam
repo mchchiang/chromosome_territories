@@ -377,7 +377,7 @@ reset_timestep 0
 
 run RUN1_TIME
 
-write_data RUN1_SIMEFILE noceff
+write_data RUN1_SIMFILE nocoeff
 
 ##################################################
 
@@ -389,7 +389,7 @@ pair_coeff 2 3 ESTART SIGMA CUTOFF
 
 fix varyehl all adapt 1 pair lj/cut epsilon 2 3 v_ehl
 
-run RUN2_TIME
+run HALF_TIME
 
 unfix varyehl
 
@@ -399,8 +399,8 @@ pair_coeff 2 3 EEND SIGMA CUTOFF
 
 fix varyehl all adapt 1 pair lj/cut epsilon 2 3 v_ehl
 
-run RUN2_TIME
+run HALF_TIME
 
-write_data RUN1_SIMFILE noceff
+write_data RUN2_SIMFILE nocoeff
 
 ##################################################
