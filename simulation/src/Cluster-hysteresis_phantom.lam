@@ -1,4 +1,4 @@
-# Cluster-transition.lam - same as Senescence.lam but without aging part
+# Cluster-hysteresis.lam - same as Senescence.lam but without aging part
 
 ##################################################
 
@@ -283,7 +283,6 @@ boundary p p f
 neighbor 1.1 bin
 neigh_modify every 1 delay 1 check yes
 
-#restart RESTART_FREQ RESTART_FILE
 read_data EQUIL_SIMFILE
 
 ##################################################
@@ -321,6 +320,8 @@ angle_coeff 1 3.0
 
 # Pairwise interactions (Switch on same-type interactions)
 
+variable ehl equal EHETLAM
+
 pair_style lj/cut 1.12246152962189
 pair_modify shift yes
 pair_coeff * * 1.0 1.0 1.12246152962189
@@ -332,11 +333,6 @@ if "EHETHET > 0.0" then &
    "pair_coeff 2 2 EHETHET SIGMA CUTOFF"
 if "EHETLAM > 0.0" then &
    "pair_coeff 2 3 EHETLAM SIGMA CUTOFF"
-if "EEUEU > 0.0" then &
-   "pair_coeff 1 1 EEUEU SIGMA CUTOFF"
-if "ECENT > 0.0" then &
-   "pair_coeff 4 4 ECENT SIGMA CUTOFF"
-
 
 # No interaections for lamin beads
 pair_coeff 3 3 0.0 0.0 0.0 
@@ -367,52 +363,66 @@ fix bal all balance 100000 1.1 rcb
 
 compute gyr mobil gyration
 thermo RUN_PRINTFREQ
-thermo_style custom v_btime temp epair vol c_gyr
+thermo_style custom v_btime temp epair vol c_gyr v_ehl
 dump 1 mobil custom RUN_PRINTFREQ RUN_OUTFILE id type x y z ix iy iz
-#dump 2 all xyz RUN_PRINTFREQ POS_FILE
-#dump_modify 2 element O N C append yes
+restart RESTART_FREQ RESTART_FILE
 
 ##################################################
 
-# Run
+# Equilibrate with bead-bead interactions
+
+variable btime equal ((step-RUN1_TIME)*DELTA_T)
 
 reset_timestep 0
+
 run RUN1_TIME
 
 write_data RUN1_SIMFILE nocoeff
 
 ##################################################
 
-# Increase output frequency
+# Pairwise interactions (Switch on same-type interactions)
 
-undump 1
-dump 1 mobil custom RUN2_PRINTFREQ RUN2_OUTFILE id type x y z ix iy iz
-
-reset_timestep 0
-run RUN1_TIME_1
-
-# Change pairwise interactions (growing -> senescence)
-
-pair_style lj/cut 1.12246152962189
+pair_style hybrid lj/cut 1.12246152962189 soft 1.12246152962189
 pair_modify shift yes
-pair_coeff * * 1.0 1.0 1.12246152962189
+pair_coeff * * lj/cut 1.0 1.0 1.12246152962189
+pair_coeff 1 1 soft 0.0 1.12246152962189
+pair_coeff 1 2 soft 0.0 1.12246152962189
+
+variable ehl equal EHETLAM
 
 # Set the types of interactions HL and HH
 
 # Both LAD and HET beads attract with laminar
-if "EHETHET2 > 0.0" then &
-   "pair_coeff 2 2 EHETHET2 SIGMA CUTOFF"
-if "EHETLAM2 > 0.0" then &
-   "pair_coeff 2 3 EHETLAM2 SIGMA CUTOFF"
-if "EEUEU > 0.0" then &
-   "pair_coeff 1 1 EEUEU SIGMA CUTOFF"
-if "ECENT > 0.0" then &
-   "pair_coeff 4 4 ECENT SIGMA CUTOFF"
+if "EHETHET > 0.0" then &
+   "pair_coeff 2 2 lj/cut EHETHET SIGMA CUTOFF"
+if "EHETLAM > 0.0" then &
+   "pair_coeff 2 3 lj/cut EHETLAM SIGMA CUTOFF"
 
 # No interaections for lamin beads
-pair_coeff 3 3 0.0 0.0 0.0 
+pair_coeff 3 3 lj/cut 0.0 0.0 0.0 
 
-run RUN2_TIME
+##################################################
+
+# Start varying HL energy
+
+variable ehl equal ramp(ESTART,EEND)
+
+pair_coeff 2 3 lj/cut ESTART SIGMA CUTOFF
+
+fix varyehl all adapt 1 pair lj/cut epsilon 2 3 v_ehl
+
+run HALF_TIME
+
+unfix varyehl
+
+variable ehl equal ramp(EEND,ESTART)
+
+pair_coeff 2 3 lj/cut EEND SIGMA CUTOFF
+
+fix varyehl all adapt 1 pair lj/cut epsilon 2 3 v_ehl
+
+run HALF_TIME
 
 write_data RUN2_SIMFILE nocoeff
 

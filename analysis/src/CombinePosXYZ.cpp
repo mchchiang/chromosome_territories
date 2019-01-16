@@ -40,6 +40,20 @@ int main(int argc, char* argv[]){
   elementMap[4] = "H";
   elementMap[5] = "F";
   elementMap[6] = "S";
+  elementMap[7] = "B";
+  elementMap[8] = "K";
+  elementMap[9] = "U";
+  elementMap[10] = "Na";
+  elementMap[11] = "Cl";
+  elementMap[12] = "He";
+  elementMap[13] = "Mg";
+  elementMap[14] = "Li";
+  elementMap[15] = "Ne";
+  elementMap[16] = "Ar";
+  elementMap[17] = "Ag";
+  elementMap[18] = "Au";
+  elementMap[19] = "Fe";
+  elementMap[20] = "Be";
 
   // For storing bead info
   vector<double> zeroVec(3, 0.0);

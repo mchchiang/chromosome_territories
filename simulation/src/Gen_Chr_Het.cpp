@@ -93,9 +93,9 @@ int main(int argc, char * argv[]){
   if (!readOK) return 1;
 
   // Read H3K9me3 (heterochromatin) file for GM12878 cell line
-  // readOK = dataMan.getFracContent(hetFile, fracOfHet, 1, 0, 1, 2, 3, 5, 10);
+  readOK = dataMan.getFracContent(hetFile, fracOfHet, 1, 0, 1, 2, 3, 5, 10);
   // Read H3K9me3 (heterochromatin) file for IMR90 cell line
-  readOK = dataMan.getFracContent(hetFile, fracOfHet, 0, 0, 0, 1, 2, 4, 10);
+  // readOK = dataMan.getFracContent(hetFile, fracOfHet, 0, 0, 0, 1, 2, 4, 10);
   if (!readOK) return 1;
 
   // Generate polymer

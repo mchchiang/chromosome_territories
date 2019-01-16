@@ -10,8 +10,8 @@ init_mode=$4      # rosette-like or random starting config
 run_dir=$5        # run directory
 
 # Interaction energy for euchromatin and centromere region
-e_eueu=0.4
-e_cent=0.4
+e_eueu=0.0
+e_cent=0.0
 
 # Init config (default is random walk)
 gen_chromo_exe="../bin/exe/Gen_Chr_Het"
@@ -124,7 +124,7 @@ file="${run_dir}/${lammps_file}"
 # Choose template depending on the type of wall used
 if [ $wall == "bead" ]; then
     echo "Copying bead wall lammps script"
-    cp Cluster-bead.lam $file
+    cp Cluster-bead_fbc.lam $file
 elif [$wall == "transition" ]; then
     echo "Copying transition lammps script"
     cp Cluster-transition.lam $file
@@ -205,5 +205,5 @@ ${gen_chromo_exe} $chromo_file $lam_file $het_file $chr_num $init_box_size $init
 
 # Relabel centromere region
 #awk '{if (NR>2603&&NR<3005) {$3=4; print} else {print}}' ${run_dir}/${init_file} > ${run_dir}/temp
-awk '{if (NR>2663&&NR<2965) {$3=4; print} else {print}}' ${run_dir}/${init_file} > ${run_dir}/temp
-mv ${run_dir}/temp ${run_dir}/${init_file}
+#awk '{if (NR>2663&&NR<2965) {$3=4; print} else {print}}' ${run_dir}/${init_file} > ${run_dir}/temp
+#mv ${run_dir}/temp ${run_dir}/${init_file}

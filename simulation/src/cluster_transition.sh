@@ -12,8 +12,8 @@ init_mode=$6      # rosette-like or random starting config
 run_dir=$7        # run directory
 
 # Interaction energy for euchromatin and centromere region
-e_eueu=0.4
-e_cent=0.4
+e_eueu=0.0
+e_cent=0.0
 
 # Init config (default is random walk)
 gen_chromo_exe="../bin/exe/Gen_Chr_Het"
@@ -23,7 +23,8 @@ fi
 
 chromo_file="../../data/chromo_length.dat"
 lam_file="../../data/LAD.Pk.genome.full.dat"
-het_file="../../data/IMR90.H3K9me3.Pk.full.dat"
+#het_file="../../data/IMR90.H3K9me3.Pk.full.dat"
+het_file="../../data/GM12878.H3K9me3.Pk.full.dat"
 chr_num=20
 
 init_box_size=100
@@ -56,10 +57,12 @@ prep3_printfreq=1000
 prep3_seed=$(python GetRandom.py $max_seed)
 prep3_time=5000 # 5000
 
-run_printfreq=1000
+run_printfreq=10000
 run1_seed=$(python GetRandom.py $max_seed)
 run1_time=200000
-run2_time=200000
+run1_time_1=1000
+run2_time=30000
+run2_printfreq=10
 
 lam_atoms=2500
 lam_seed=$(python GetRandom.py $max_seed)
@@ -101,10 +104,12 @@ prep1_outfile="prep1_${sim_name}.lammpstrj"
 prep2_outfile="prep2_${sim_name}.lammpstrj"
 prep3_outfile="prep3_${sim_name}.lammpstrj"
 run_outfile="run_${sim_name}.lammpstrj"
+run2_outfile="quench_${sim_name}.lammpstrj"
 pos_file="pos_${sim_name}.dat"
 map_file="${sim_name}.lammpsmap"
 equil_simfile="equil_${sim_name}.out"
-run1_simfile="end_${sim_name}.out"
+run1_simfile="run_${sim_name}.out"
+run2_simfile="end_${sim_name}.out"
 
 # Convert all time values to simulation time (i.e. rescale by delta t)
 restart_freq=$(bc <<< "$restart_freq/$delta_t")
@@ -118,7 +123,9 @@ prep3_time=$(bc <<< "$prep3_time/$delta_t")
 prep3_printfreq=$(bc <<< "$prep3_printfreq/$delta_t")
 run1_time=$(bc <<< "$run1_time/$delta_t")
 run_printfreq=$(bc <<< "$run_printfreq/$delta_t")
+run1_time_1=$(bc <<< "$run1_time_1/$delta_t")
 run2_time=$(bc <<< "$run2_time/$delta_t")
+run2_printfreq=$(bc <<< "$run2_printfreq/$delta_t")
 
 # Make execution directory
 run_dir="${run_dir}/${sim_name}"
@@ -138,7 +145,11 @@ elif [ $wall == "transition" ]; then
     # Replace specific macros
     sed -i -- "s/EHETHET2/${e_hethet2_norm}/g" $file
     sed -i -- "s/EHETLAM2/${e_hetlam2_norm}/g" $file
+    sed -i -- "s/RUN1_TIME_1/${run1_time_1}/g" $file
     sed -i -- "s/RUN2_TIME/${run2_time}/g" $file
+    sed -i -- "s/RUN2_PRINTFREQ/${run2_printfreq}/g" $file
+    sed -i -- "s/RUN2_OUTFILE/${run2_outfile}/g" $file
+    sed -i -- "s/RUN2_SIMFILE/${run2_simfile}/g" $file
 else
     echo "Copying lj wall lammps script"
     cp Cluster-ljwall.lam $file
@@ -214,6 +225,6 @@ sed -i -- "s/RUN1_SIMFILE/${run1_simfile}/g" $file
 
 ${gen_chromo_exe} $chromo_file $lam_file $het_file $chr_num $init_box_size $init_box_size $init_box_size $buffer "${run_dir}/${init_file}" "${run_dir}/${map_file}"
 
-# Relabel centromere region
-awk '{if (NR>2603&&NR<3005) {$3=4; print} else {print}}' ${run_dir}/${init_file} > ${run_dir}/temp
+# Relabel all beads as heterochromatin (sticky)
+awk '{if (NF==9) {$3=2; print} else {print}}' ${run_dir}/${init_file} > ${run_dir}/temp
 mv ${run_dir}/temp ${run_dir}/${init_file}

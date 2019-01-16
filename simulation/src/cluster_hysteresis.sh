@@ -137,7 +137,8 @@ file="${run_dir}/${lammps_file}"
 #cp Cluster-hysteresis.lam $file
 #cp Cluster-hysteresis_pbc.lam $file
 #cp Cluster-hysteresis_fbc.lam $file
-cp Cluster-hysteresis_pbc_ramp.lam $file
+#cp Cluster-hysteresis_pbc_ramp.lam $file
+cp Cluster-hysteresis_phantom.lam $file
 
 # Replace macros in template with input values
 sed -i -- "s/INIT_FILE/${init_file}/g" $file

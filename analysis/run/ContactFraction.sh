@@ -22,17 +22,17 @@ frac_exe="${bin}/contact/exe/ContactFraction"
 wall_dist=3.0
 bead_type="all"
 t_start=0
-t_end=200000
+t_end=2200000
 t_inc=1000
 
 N=6303
-Nhet=3079
-Neu=2923
-Ncent=301
+Nhet=3565 # 3079
+Neu=2738 # 2923
+Ncent=0 # 301
 L=40
 chr=20
 
-max_jobs=8
+max_jobs=10
 cmd=()
 jobid=0
 

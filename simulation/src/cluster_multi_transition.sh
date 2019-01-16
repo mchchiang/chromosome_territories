@@ -7,9 +7,9 @@ init_mode=$4
 dir=$5
 
 ehh=1.4
-ehl=1.8
+ehl=1.2
 ehh2=1.4
-ehl2=0.2
+ehl2=0.4
 run=$run_start
 
 

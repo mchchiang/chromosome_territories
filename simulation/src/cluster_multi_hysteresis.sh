@@ -8,7 +8,7 @@ dir=$5
 
 ehh=1.4
 ehl_start=1.2
-ehl_end=0.6
+ehl_end=0.2
 run=$run_start
 
 
