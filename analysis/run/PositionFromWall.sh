@@ -12,23 +12,26 @@ run_inc=$9
 in_dir=${10}
 out_dir=${11}
 
-ehh=$(python -c "print '%.1f' % ($ehh_start)")
-ehl=$(python -c "print '%.1f' % ($ehl_start)")
+ehh=$(python -c "print '%.2f' % ($ehh_start)")
+ehl=$(python -c "print '%.2f' % ($ehl_start)")
 
 source 'runconfig.cfg'
 pos_exe="${bin}/contact/exe/PositionFromWall"
 
 # Selection arguments
-bead_type="het"
-t_start=0
+bead_type="all"
+t_start=150000
+#t_start=0 # For hysteresis loop
 t_end=200000
+#t_end=2210000 # For hysteresis loop
 t_inc=1000
 
+
 N=6303
-Nhet=3079
-Neu=2923
-Ncent=301
-L=40
+Nhet=3513 # 3565 # 3079
+Neu=2790 # 2738 # 2923
+Ncent=0 # 301
+L=35
 chr=20
 
 max_jobs=8
@@ -37,9 +40,11 @@ jobid=0
 
 while (( $(bc <<< "$ehh < $ehh_end") ))
 do
-    ehl=$(python -c "print '%.1f' % ($ehl_start)")
+    ehh=$(python -c "print '%.2f' % (0.01 if abs($ehh)<0.0001 else $ehh)")
+    ehl=$(python -c "print '%.2f' % ($ehl_start)")
     while (( $(bc <<< "$ehl < $ehl_end") ))
     do
+	ehl=$(python -c "print '%.2f' % (0.01 if abs($ehl)<0.0001 else $ehl)")
 	for (( run=$run_start; $run<=$run_end; run+=$run_inc ))
 	do
 	    name="sene_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}_run_${run}"
@@ -49,9 +54,11 @@ do
 	    jobid=$(bc <<< "$jobid + 1")
 
 	done
-	ehl=$(python -c "print '%.1f' % ($ehl + $ehl_inc)")
+	ehl=$(python -c "print '%.2f' % (0.0 if abs($ehl-0.01)<0.0001 else $ehl)")	
+	ehl=$(python -c "print '%.2f' % ($ehl + $ehl_inc)")
     done
-    ehh=$(python -c "print '%.1f' % ($ehh + $ehh_inc)")
+    ehh=$(python -c "print '%.2f' % (0.0 if abs($ehh-0.01)<0.0001 else $ehh)")
+    ehh=$(python -c "print '%.2f' % ($ehh + $ehh_inc)")
 done
 
 

@@ -14,7 +14,7 @@ out_dir=${11}
 
 # Selection arguments
 N=6303
-L=40
+L=35
 chr=20
 
 # Average
@@ -41,8 +41,8 @@ do
 	    frac_file="${in_dir}/wall-frac_${name}_run_${run}.dat"
 	    avg_file="${out_dir}/wall-frac_${name}_run_${run}_avg.dat"
 	    python $avg_py 0 1 $t_start $t_end $t_inc $frac_file $avg_file
-	    data=$(cat $avg_file)
-	    echo $data >> $out_file
+#	    data=$(cat $avg_file)
+#	    echo $data >> $out_file
 	done
 	multi_avg_file="${out_dir}/wall-frac_${name}_avg.dat"
 	python $multi_avg_py -1 0 -1 -1 $multi_avg_file "${out_dir}/wall-frac_${name}_run"*_avg.dat

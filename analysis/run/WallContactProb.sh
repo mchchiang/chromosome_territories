@@ -21,7 +21,7 @@ contact_exe="${bin}/contact/exe/WallContactProb"
 # Selection arguments
 wall_dist=3.0
 
-L=40
+L=32
 chr=20
 N=6303
 t_start=150000

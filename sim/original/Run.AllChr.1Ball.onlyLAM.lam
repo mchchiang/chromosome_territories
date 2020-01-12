@@ -1,0 +1,296 @@
+####################################
+####	ULOOP			####
+####################################
+variable jbn uloop 1  # run n simulations
+variable startfrom equal 0
+variable jn equal ${jbn}+${startfrom}
+print ${jn}
+variable seed equal (${jn}+4)*51-2*${jbn}
+#
+variable N equal 46
+#
+variable Temp equal 1.0 
+#
+variable Norm equal 0.88585294441338
+variable E equal 1.0
+#
+################################
+####	DEFINITIONS 	########
+################################
+#
+variable folder index AllChr1Ball
+shell mkdir ${folder}
+variable SimOutType index AllChr.1Ball.LAM
+#
+variable rname index StartFiles/LammpsInput.46Chr.1BallEach
+#
+variable simname index AllChr1Ball.${SimOutType}
+#
+units lj
+atom_style angle 
+boundary        p p p
+neighbor 1.1 bin
+neigh_modify every 1 delay 1 check yes 
+#
+restart 10000 ${folder}/Restart.Neutral.${simname}.
+read_data ${rname}
+#
+####################################
+####	WALL	             #######
+####################################
+change_box all x final -100 100 y final -100 100 z final -100 100 boundary f f f units box
+fix WALL all wall/lj126 xhi EDGE 1.0 1.0 1.122462048 xlo EDGE 1.0 1.0 1.122462048 yhi EDGE 1.0 1.0 1.122462048 ylo EDGE 1.0 1.0 1.122462048 zhi EDGE 1.0 1.0 1.122462048 zlo EDGE 1.0 1.0 1.122462048 units box
+fix WALLall all indent 10 sphere 0.0 0.0 0.0 70.0 side in # 70.0 side in
+####################################
+####	PAIRS	             #######
+####################################
+pair_style  soft 25
+pair_modify     shift yes
+pair_coeff      * * 1 25.0
+variable prefactor equal ramp(0,10)
+fix push all adapt 1 pair soft a * * v_prefactor
+####################################
+####	BOND	             #######
+####################################
+#bond_style   harmonic
+#special_bonds lj 1 1 1
+#bond_coeff   1  0 1.1
+####################################
+####	ANGLE	             #######
+####################################
+#angle_style cosine
+#angle_coeff 1 10
+#
+dump 1 all custom 100 Prep_${simname}.lammpstrj id mol type xu yu zu vx vy vz
+#
+####################################
+####	LANGEVIN	             ###
+####################################
+fix 1 all  nve
+fix 2 all  langevin   1.0 1.0   1.0   766151
+####################################
+####	FIRST RUN	             ###
+####################################
+run 1000
+undump 1
+unfix push
+##############################################
+##########		MAKE NUCLEAR LAMINA 	######
+##############################################
+region s1 sphere 0.0 0.0 0.0 71 side in
+region s2 sphere 0.0 0.0 0.0 70.5 side out
+region shell intersect 2 s1 s2
+create_atoms 10 random 5000 2342342 shell
+pair_coeff      *9 10 1 13.0
+pair_coeff      10 10 0.0 0.0
+################################
+###     GROUPS      ############
+################################
+group nomob type 10 #THESE ARE ATOMS IN THE OUTER MEMBRANE
+group mobil subtract all nomob
+####################################
+####	FIXES	             #######
+####################################
+unfix 1
+unfix 2
+fix 1 mobil   nve  
+fix 2 mobil  langevin   1.0 1.0   1.0   424242 
+comm_style tiled
+fix bal all balance 100000 1.1 rcb
+compute GYR all gyration 
+#####################################
+####	THERMO AND INTEGRATION      #
+#####################################
+thermo 100
+thermo_style   custom   step  temp  epair vol cpu c_GYR
+dump 2 all custom 100 Prep2_${simname}.lammpstrj id mol type xu yu zu vx vy vz
+####################################
+####	SECOND RUN          ########
+####################################
+run 1000
+undump 2
+###############################################
+####	PAIRS -- ATTRACT PROPTO TYPE 	#######
+###############################################
+pair_style hybrid lj/cut 15 soft 25
+pair_modify     shift yes
+pair_coeff * * soft 50.0 25.0
+pair_coeff 10 10 soft 0.0 0.0
+
+##1-9 ARE TYPES OF BEADS
+##10 IS TYPE OF OUTER LAYER
+pair_coeff 1 10 lj/cut  1 13.0 14.5920066280218 #LOW LADs
+pair_coeff 2 10 lj/cut  1 13.0 14.5920066280218
+pair_coeff 3 10 lj/cut  1 13.0 14.5920066280218
+pair_coeff 4 10 lj/cut  1 13.0 14.5920066280218
+#
+pair_coeff 5 10 lj/cut  1.0 13.0 24.5920066280218
+pair_coeff 6 10 lj/cut  1.0 13.0 24.5920066280218
+pair_coeff 7 10 lj/cut  1.0 13.0 24.5920066280218
+#
+pair_coeff 8 10 lj/cut  2.0 13.0 24.5920066280218
+pair_coeff 9 10 lj/cut  2.0 13.0 24.5920066280218   #HIGH LADs
+
+#############################
+###     RUN             #####
+#############################
+dump 2 all custom 100000 PrepFin_${simname}.lammpstrj id mol type xu yu zu vx vy vz
+run 100000
+write_data Eq.46Chr1Ball.LAMonly.1
+#
+unfix 1
+unfix 2
+fix 1 mobil   nve  
+fix 2 mobil  langevin   1.0 5.0   1.0   424242 
+run 100000
+#
+unfix 1
+unfix 2
+fix 1 mobil   nve  
+fix 2 mobil  langevin   5.0 1.0   1.0   424242
+#
+run 100000
+write_data Eq.46Chr1Ball.LAMonly.2
+#
+unfix 1
+unfix 2
+fix 1 mobil   nve  
+fix 2 mobil  langevin   1.0 5.0   1.0   424242 
+run 100000
+#
+unfix 1
+unfix 2
+fix 1 mobil   nve  
+fix 2 mobil  langevin   5.0 1.0   1.0   424242
+#
+run 100000
+write_data Eq.46Chr1Ball.LAMonly.3
+#
+unfix 1
+unfix 2
+fix 1 mobil   nve  
+fix 2 mobil  langevin   1.0 5.0   1.0   424242 
+run 100000
+#
+unfix 1
+unfix 2
+fix 1 mobil   nve  
+fix 2 mobil  langevin   5.0 1.0   1.0   424242
+#
+run 100000
+write_data Eq.46Chr1Ball.LAMonly.4
+#
+unfix 1
+unfix 2
+fix 1 mobil   nve  
+fix 2 mobil  langevin   1.0 5.0   1.0   424242 
+run 100000
+#
+unfix 1
+unfix 2
+fix 1 mobil   nve  
+fix 2 mobil  langevin   5.0 1.0   1.0   424242
+#
+run 100000
+write_data Eq.46Chr1Ball.LAMonly.5
+#
+unfix 1
+unfix 2
+fix 1 mobil   nve  
+fix 2 mobil  langevin   1.0 5.0   1.0   424242 
+run 100000
+#
+unfix 1
+unfix 2
+fix 1 mobil   nve  
+fix 2 mobil  langevin   5.0 1.0   1.0   424242
+#
+run 100000
+write_data Eq.46Chr1Ball.LAMonly.6
+#
+unfix 1
+unfix 2
+fix 1 mobil   nve  
+fix 2 mobil  langevin   1.0 5.0   1.0   424242 
+run 100000
+#
+unfix 1
+unfix 2
+fix 1 mobil   nve  
+fix 2 mobil  langevin   5.0 1.0   1.0   424242
+#
+run 100000
+write_data Eq.46Chr1Ball.LAMonly.7
+#
+unfix 1
+unfix 2
+fix 1 mobil   nve  
+fix 2 mobil  langevin   1.0 5.0   1.0   424242 
+run 100000
+#
+unfix 1
+unfix 2
+fix 1 mobil   nve  
+fix 2 mobil  langevin   5.0 1.0   1.0   424242
+#
+run 100000
+write_data Eq.46Chr1Ball.LAMonly.8
+#
+unfix 1
+unfix 2
+fix 1 mobil   nve  
+fix 2 mobil  langevin   1.0 5.0   1.0   424242 
+run 100000
+#
+unfix 1
+unfix 2
+fix 1 mobil   nve  
+fix 2 mobil  langevin   5.0 1.0   1.0   424242
+#
+run 100000
+write_data Eq.46Chr1Ball.LAMonly.9
+#
+unfix 1
+unfix 2
+fix 1 mobil   nve  
+fix 2 mobil  langevin   1.0 5.0   1.0   424242 
+run 100000
+#
+unfix 1
+unfix 2
+fix 1 mobil   nve  
+fix 2 mobil  langevin   5.0 1.0   1.0   424242
+#
+run 100000
+write_data Eq.46Chr1Ball.LAMonly.10
+
+
+################
+## ULOOP    ####
+################
+clear
+variable rname delete
+variable simname delete
+variable folder delete
+variable seed delete
+variable E delete
+variable RW delete
+variable SimOutType delete
+variable SimInType delete
+variable jn delete
+variable jf delete
+variable dmu delete
+variable ratePoly delete
+variable ddmu delete
+
+next jbn
+jump SELF #last line!!!
+
+### If e.g. I run this on 10 partitions of 1 processor,
+### and initialise the variable with 'uloop N'
+### it will run 10 simulations with 'jobnumber' taking 
+### values 1-10. Then when a particular simulation finishes, the 
+### script will be run again with the next value of jobnumber, 
+### until N simulations have been run.
+## SO ULOOP IS "SERIAL" BUT FOR SURE 10x1 PROCs ARE ALWAYS BUSY
+##

@@ -8,35 +8,46 @@ import scipy
 import scipy.stats
 import math
 
-def read_array(filename, value_col):
-    values= []
+def read_array(filename, array, index_col, value_col):
     with open(filename, 'r') as f:
         for line in f:
             if (line.startswith("#")): continue
             data = line.strip().split()
             if (data == []): continue
-            values.append(float(data[value_col]))
-    return scipy.array(values)
-
+            index = int(data[index_col])
+            value = float(data[value_col])
+            array[index] = value
 
 args = sys.argv
 args.pop(0) # Ignore self
 
-if (len(args) < 3):
-    print "Usage: [value_col] [array1_file] [array2_file] [out_file]"
+if (len(args) != 6):
+    print "Usage: [size] [index_col] [value_col] " \
+        "[array1_file] [array2_file] [out_file]"
     sys.exit(1)
 
+size = int(args.pop(0))
+index_col = int(args.pop(0))
 value_col = int(args.pop(0))
 array1_file = args.pop(0)
 array2_file = args.pop(0)
 out_file = args.pop(0)
 
-# Read in arrays 
-array1 = read_array(array1_file, value_col)
-array2 = read_array(array2_file, value_col)
+array1 = [0.0 for i in xrange(size)]
+array2 = [0.0 for i in xrange(size)]
 
-array1 = scipy.nan_to_num(array1)
-array2 = scipy.nan_to_num(array2)
+# Read in arrays 
+read_array(array1_file, array1, index_col, value_col)
+read_array(array2_file, array2, index_col, value_col)
+
+# Remove nan or inf entries
+arrays = [[a,b] for a,b in zip(array1,array2) if not 
+          (math.isnan(a) or math.isinf(a) or math.isnan(b) or math.isinf(b))]
+array1 = [x[0] for x in arrays]
+array2 = [x[1] for x in arrays]
+
+array1 = scipy.array(array1)
+array2 = scipy.array(array2)
 
 # Compute KS 2-Sample Test
 result = scipy.stats.ks_2samp(array1, array2)

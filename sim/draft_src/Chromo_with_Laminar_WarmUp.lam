@@ -1,0 +1,222 @@
+# Chromo_with_Laminar_WarmUp.lam
+
+##################################################
+
+# Variables and definitions
+
+variable btime equal (step*DELTA_T)
+
+##################################################
+
+# Simulation box definitions
+
+units lj
+atom_style angle
+boundary		p p p
+neighbor 1.3 bin
+neigh_modify every 1 delay 1 check yes
+
+#restart RESTART_FREQ RESTART_FILE
+read_data INIT_FILE
+
+##################################################
+
+# Wall definition -- repulsive at the boundary
+
+change_box all x final XLO XHI y final YLO YHI z final ZLO ZHI  boundary f f f units box
+fix WALL all wall/lj126 xhi EDGE 1.0 1.0 1.122462048 xlo EDGE 1.0 1.0 1.122462048 yhi EDGE 1.0 1.0 1.122462048 ylo EDGE 1.0 1.0 1.122462048 zhi EDGE 1.0 1.0 1.122462048 zlo EDGE 1.0 1.0 1.122462048 units box
+
+##################################################
+
+# Pairwise potential
+# Use soft potential to remove overlapping beads
+# Strength of potential increases over time: prefactor = 0-5
+
+pair_style soft 1.122
+pair_modify shift yes
+pair_coeff * * 2 1.122
+variable prefactor equal ramp(0,5)
+fix push all adapt 1 pair soft a * * v_prefactor
+
+##################################################
+
+# Bond potential
+
+bond_style harmonic 
+special_bonds lj 1 1 1
+bond_coeff 1 50.0 1.1
+
+##################################################
+
+# Angle potential
+
+angle_style cosine
+angle_coeff 1 10.0 #20 sigma for realistic DNA (1 bead = 2.5 nm)
+
+##################################################
+
+# Use Brownian dynamics
+
+fix 1 all nve
+fix 2 all langevin 1.0 1.0 1.0 PREP1_SEED
+
+##################################################
+
+# Set timestep of integrator
+
+timestep DELTA_T
+
+##################################################
+
+# Parallel computation details
+
+comm_style tiled
+fix bal all balance 100000 1.1 rcb
+
+##################################################
+
+# Output
+
+compute GYR all gyration
+thermo PREP1_PRINTFREQ
+thermo_style custom v_btime temp epair vol c_GYR
+dump 1 all custom PREP1_PRINTFREQ PREP1_OUTFILE id mol type xu yu zu vx vy vz
+
+##################################################
+
+# Equalibrate run
+
+run PREP1_TIME
+undump 1
+unfix push
+
+write_data PRECOMPRESS_FILE nocoeff
+
+##################################################
+
+# PART II - Use indenter to decrease confinement radius
+
+##################################################
+
+# Pair potential
+
+pair_style soft 1.122
+pair_modify shift yes
+pair_coeff * * 2 1.122
+variable prefactor equal ramp(0,5)
+fix push all adapt 1 pair soft a * * v_prefactor
+
+##################################################
+
+# Bond potential
+
+bond_style harmonic 
+special_bonds lj 1 1 1
+bond_coeff 1 50.0 1.1
+
+##################################################
+
+# Angle potential
+
+angle_style cosine
+angle_coeff 1 10.0 #20 sigma for realistic DNA (1 bead = 2.5 nm)
+
+##################################################
+
+# Use Brownian dynamics
+
+unfix 1
+unfix 2
+fix 1 all nve
+fix 2 all langevin 1.0 1.0 1.0 PREP2_SEED
+
+##################################################
+
+# Set timestep of integrator
+
+timestep DELTA_T
+
+##################################################
+
+# Parallel computation details
+
+comm_style tiled
+fix bal all balance 100000 1.1 rcb
+
+##################################################
+
+# Output
+
+thermo PREP2_PRINTFREQ
+thermo_style custom v_btime temp epair vol c_GYR
+dump 2 all custom PREP2_PRINTFREQ PREP2_OUTFILE id mol type xu yu zu vx vy vz
+
+##################################################
+
+# Run indentation (reduce confinement volume)
+
+reset_timestep 0
+
+fix WALLall all indent 5 sphere 0.0 0.0 0.0 80.0 side in
+run PREP2_TIME
+unfix WALLall
+fix WALLall all indent 5 sphere 0.0 0.0 0.0 75.0 side in
+run PREP2_TIME
+unfix WALLall
+fix WALLall all indent 5 sphere 0.0 0.0 0.0 70.0 side in
+run PREP2_TIME
+unfix WALLall
+
+write_data COMPRESS_FILE nocoeff
+
+##################################################
+
+# Post-indentation relaxation - resolve any entanglements
+
+reset_timestep 0
+unfix push
+pair_style soft 2.5
+pair_modify shift yes
+pair_coeff * * 50.0 1.122
+angle_style cosine
+angle_coeff 1 3.0 
+
+##################################################
+
+# Make nuclear laminar
+
+region s1 sphere 0.0 0.0 0.0 OUT_RADIUS side in # 71 side in
+region s2 sphere 0.0 0.0 0.0 IN_RADIUS side out # 70.5 side out
+region shell intersect 2 s1 s2
+create_atoms 6 random LAM_ATOMS LAM_SEED shell
+region shell delete
+
+##################################################
+
+# Create groups
+
+group nomob type 11 # Atoms forming the laminar
+group mobil subtract all nomob # Chromosome spheres
+
+##################################################
+
+# Relaxation run after creating the laminar
+
+fix WALLall mobil indent 10 sphere 0.0 0.0 0.0 71.0 side in
+
+pair_style soft 2.5
+pair_modify shift yes
+pair_coeff * * 50 1.3
+angle_style cosine
+angle_coeff 1 3.0
+
+unfix 1
+unfix 2
+fix 1 mobil nve  
+fix 2 mobil langevin 1.0 1.0 1.0 PREP3_SEED 
+
+run PREP3_TIME
+
+write_data WARMEDUP_FILE nocoeff
+
+##################################################

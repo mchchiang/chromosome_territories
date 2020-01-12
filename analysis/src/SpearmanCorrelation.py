@@ -34,15 +34,21 @@ array1_file = args.pop(0)
 array2_file = args.pop(0)
 out_file = args.pop(0)
 
-array1 = scipy.zeros(size)
-array2 = scipy.zeros(size)
+array1 = [0.0 for i in xrange(size)] #scipy.zeros(size)
+array2 = [0.0 for i in xrange(size)] #scipy.zeros(size)
 
 # Read in arrays 
 read_array(array1_file, array1, index_col, value_col)
 read_array(array2_file, array2, index_col, value_col)
 
-array1 = scipy.nan_to_num(array1)
-array2 = scipy.nan_to_num(array2)
+# Remove nan or inf entries
+arrays = [[a,b] for a,b in zip(array1,array2) if not 
+          (math.isnan(a) or math.isinf(a) or math.isnan(b) or math.isinf(b))]
+array1 = [x[0] for x in arrays]
+array2 = [x[1] for x in arrays]
+
+array1 = scipy.array(array1)
+array2 = scipy.array(array2)
 
 # Compute correlation
 corr = scipy.stats.spearmanr(array1, array2)

@@ -14,7 +14,7 @@ out_dir=${11}
 
 # Selection arguments
 N=6303
-L=40
+L=35
 chr=20
 
 # Average
@@ -26,14 +26,16 @@ t_inc=1000
 out_file="${out_dir}/zpos_sene_chr_${chr}_L_${L}.dat"
 > $out_file
 
-ehh=$(python -c "print '%.1f' % ($ehh_start)")
-ehl=$(python -c "print '%.1f' % ($ehl_start)")
+ehh=$(python -c "print '%.2f' % ($ehh_start)")
+ehl=$(python -c "print '%.2f' % ($ehl_start)")
 
 while (( $(bc <<< "$ehh < $ehh_end") ))
 do
-    ehl=$(python -c "print '%.1f' % ($ehl_start)")
+    ehh=$(python -c "print '%.2f' % (0.01 if abs($ehh)<0.0001 else $ehh)")
+    ehl=$(python -c "print '%.2f' % ($ehl_start)")
     while (( $(bc <<< "$ehl < $ehl_end") ))
     do
+	ehl=$(python -c "print '%.2f' % (0.01 if abs($ehl)<0.0001 else $ehl)")
 	echo "Doing ehh = $ehh ehl = $ehl"
 	name="sene_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
 	for (( run=$run_start; $run<=$run_end; run+=$run_inc ))
@@ -48,9 +50,11 @@ do
 	echo $ehh $ehl $data >> $out_file
 	rm "${out_dir}/zpos_${name}_run"*_avg.dat
 	rm "${out_dir}/zpos_${name}_avg.dat"
-	ehl=$(python -c "print '%.1f' % ($ehl + $ehl_inc)")
+	ehl=$(python -c "print '%.2f' % (0.0 if abs($ehl-0.01)<0.0001 else $ehl)")
+	ehl=$(python -c "print '%.2f' % ($ehl + $ehl_inc)")
     done
     echo >> $out_file
-    ehh=$(python -c "print '%.1f' % ($ehh + $ehh_inc)")
+    ehh=$(python -c "print '%.2f' % (0.0 if abs($ehh-0.01)<0.0001 else $ehh)")
+    ehh=$(python -c "print '%.2f' % ($ehh + $ehh_inc)")
 done
 

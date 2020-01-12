@@ -1,0 +1,429 @@
+# Cluster-hysteresis.lam - same as Senescence.lam but without aging part
+
+##################################################
+
+# Variables and definitions
+
+variable btime equal (step*DELTA_T)
+
+##################################################
+
+# Simulation basic definitions
+
+units lj
+atom_style angle
+boundary p p p
+neighbor 1.1 bin
+neigh_modify every 1 delay 1 check yes
+
+#restart RESTART_FREQ RESTART_FILE
+read_data INIT_FILE
+
+##################################################
+
+# Simulation box definition -- repulsive at the boundary
+
+change_box all x final IXLO IXHI y final IYLO IYHI & 
+z final IZLO IZHI  boundary f f f units box
+fix wall all wall/lj126 &
+xlo EDGE 1.0 1.0 1.122462048 &
+xhi EDGE 1.0 1.0 1.122462048 &
+ylo EDGE 1.0 1.0 1.122462048 &
+yhi EDGE 1.0 1.0 1.122462048 &
+zlo EDGE 1.0 1.0 1.122462048 &
+zhi EDGE 1.0 1.0 1.122462048 units box
+
+##################################################
+##################################################
+# PART 1 - Initial equilibration
+##################################################
+##################################################
+
+# Bond potential
+
+bond_style harmonic
+bond_coeff 1 EHARM 1.1
+
+##################################################
+
+# Angle potential
+
+angle_style cosine
+angle_coeff 1 20.0
+
+##################################################
+
+# Pairwise interaction
+# Use soft potential for equilibration to resolve crossovers
+
+pair_style soft 1.12246152962189
+pair_coeff * * ESOFT 1.12246152962189
+variable prefactor equal ramp(0,ESOFT)
+fix push all adapt 1 pair soft a * * v_prefactor
+
+##################################################
+
+# Set Brownian dynamics
+
+fix 1 all nve # NVE ensemble
+fix 2 all langevin 1.0 1.0 1.0 PREP1_SEED # Brownian dynamics
+
+##################################################
+
+# Integrator
+
+timestep DELTA_T
+
+##################################################
+
+# Parallel computation details
+
+comm_style tiled
+fix bal all balance 100000 1.1 rcb
+
+##################################################
+
+# Dumps/output
+
+compute gyr all gyration
+thermo PREP1_PRINTFREQ
+thermo_style custom v_btime temp epair vol c_gyr
+dump 1 all custom PREP1_PRINTFREQ PREP1_OUTFILE id type x y z ix iy iz
+
+##################################################
+
+# Run
+
+run PREP1_TIME_1
+unfix push
+
+##################################################
+
+# Change to lj/cut pair potential
+
+pair_style lj/cut 1.12246152962189
+pair_modify shift yes
+pair_coeff * * 1.0 1.0 1.12246152962189
+
+##################################################
+
+# Run
+
+run PREP1_TIME_2
+
+##################################################
+
+# Change to FENE bonds and reduce stiffness
+
+bond_style fene
+bond_coeff 1 30.0 1.6 1.0 1.0
+special_bonds fene
+
+angle_coeff 1 3.0
+
+##################################################
+
+# Run
+
+run PREP1_TIME_3
+
+##################################################
+
+# Unfix/undump
+
+undump 1
+unfix wall
+
+##################################################
+##################################################
+# PART 2 - Reduce box size
+##################################################
+##################################################
+
+# Reduce simulation box size using indenter
+
+variable zhi equal (ZHI-1.5)
+variable xloramp equal ramp(IXLO,XLO)
+variable xhiramp equal ramp(IXHI,XHI)
+variable yloramp equal ramp(IYLO,YLO)
+variable yhiramp equal ramp(IYHI,YHI)
+variable zloramp equal ramp(IZLO,ZLO)
+variable zhiramp equal ramp(IZHI,${zhi})
+
+fix wall all wall/lj126 &
+xlo v_xloramp 1.0 1.0 1.122462048 &
+xhi v_xhiramp 1.0 1.0 1.122462048 &
+ylo v_yloramp 1.0 1.0 1.122462048 &
+yhi v_yhiramp 1.0 1.0 1.122462048 &
+zlo v_zloramp 1.0 1.0 1.122462048 &
+zhi v_zhiramp 1.0 1.0 1.122462048 units box 
+
+##################################################
+
+# Set Brownian dynamics
+
+unfix 1
+unfix 2
+fix 1 all nve
+fix 2 all langevin 1.0 1.0 1.0 PREP2_SEED
+
+##################################################
+
+# Dumps/output
+
+thermo PREP2_PRINTFREQ
+thermo_style custom v_btime temp epair vol c_gyr
+dump 1 all custom PREP2_PRINTFREQ PREP2_OUTFILE id type x y z ix iy iz
+
+##################################################
+
+# Run
+
+reset_timestep 0
+run PREP2_TIME
+
+##################################################
+
+# Unfix/undump
+
+undump 1
+unfix wall
+
+##################################################
+##################################################
+# PART 3 - Equilibrate with laminar
+##################################################
+##################################################
+
+# Change simulation box
+
+change_box all x final XLO XHI y final YLO YHI & 
+z final ZLO ZHI  boundary p p f units box
+fix wall all wall/lj126 &
+zhi EDGE 1.0 1.0 1.122462048 &
+zlo EDGE 1.0 1.0 1.122462048 units box
+
+##################################################
+
+# Make laminar beads
+
+variable zOutPlane equal (ZHI-0.5)
+variable zInPlane equal (ZHI-1.5)
+
+region p1 plane 0.0 0.0 ${zOutPlane} 0.0 0.0 1.0 side out
+region p2 plane 0.0 0.0 ${zInPlane} 0.0 0.0 1.0 side in
+region shell intersect 2 p1 p2
+
+create_atoms 3 random LAM_ATOMS LAM_SEED shell
+
+pair_style lj/cut 1.12246152962189
+pair_modify shift yes
+pair_coeff * * 1.0 1.0 1.12246152962189
+pair_coeff 3 3 0.0 0.0  # No interaction betweeen laminar beads 
+
+##################################################
+
+# Define groups
+
+group nomob type 3 # Lamin beads
+group mobil subtract all nomob # Chromosome beads
+
+##################################################
+
+# Set Brownian dynamics
+
+unfix 1
+unfix 2
+fix 1 mobil nve
+fix 2 mobil langevin 1.0 1.0 1.0 PREP3_SEED
+
+##################################################
+
+# Dumps/output
+
+uncompute gyr
+compute gyr mobil gyration
+thermo PREP3_PRINTFREQ
+thermo_style custom v_btime temp epair vol c_gyr
+dump 1 all custom PREP3_PRINTFREQ PREP3_OUTFILE id type x y z ix iy iz
+
+##################################################
+
+# Run
+
+reset_timestep 0
+run PREP3_TIME
+
+##################################################
+
+# Unfix/undump
+
+unfix wall
+undump 1
+
+write_data EQUIL_SIMFILE nocoeff
+
+##################################################
+##################################################
+# PART 4 - Actual simulation - interaction with laminar
+##################################################
+##################################################
+
+# Start from scratch
+
+clear
+
+##################################################
+
+# Simulation basic definitions
+
+units lj
+atom_style angle
+boundary p p f
+neighbor 1.1 bin
+neigh_modify every 1 delay 1 check yes
+
+read_data EQUIL_SIMFILE
+
+##################################################
+
+# Define groups
+
+group nomob type 3 # Lamin beads
+group mobil subtract all nomob # Chromosome beads
+
+##################################################
+
+# Simulation box definition -- repulsive at the boundary
+
+change_box all x final XLO XHI y final YLO YHI & 
+z final ZLO ZHI  boundary p p f units box
+fix WALL mobil wall/lj126 zhi EDGE 1.0 1.0 1.122462048 &
+zlo EDGE 1.0 1.0 1.122462048 units box
+
+##################################################
+
+# Bond potential
+
+bond_style fene
+special_bonds fene
+bond_coeff 1 30.0 1.6 1.0 1.0
+
+##################################################
+
+# Angle potential
+
+angle_style cosine
+angle_coeff 1 3.0
+
+##################################################
+
+# Pairwise interactions (Switch on same-type interactions)
+
+variable ehl equal EHETLAM
+
+pair_style lj/cut 1.12246152962189
+pair_modify shift yes
+pair_coeff * * 1.0 1.0 1.12246152962189
+
+# Set the types of interactions HL and HH
+
+# Both LAD and HET beads attract with laminar
+if "EHETHET > 0.0" then &
+   "pair_coeff 2 2 EHETHET SIGMA CUTOFF"
+if "EHETLAM > 0.0" then &
+   "pair_coeff 2 3 EHETLAM SIGMA CUTOFF"
+
+# No interaections for lamin beads
+pair_coeff 3 3 0.0 0.0 0.0 
+
+##################################################
+
+# Set Brownian dynamics
+
+fix 1 mobil nve
+fix 2 mobil langevin 1.0 1.0 1.0 RUN1_SEED
+
+##################################################
+
+# Integrator
+
+timestep DELTA_T
+
+##################################################
+
+# Parallel computation details
+
+comm_style tiled
+fix bal all balance 100000 1.1 rcb
+
+##################################################
+
+# Dumps/output
+
+compute gyr mobil gyration
+thermo RUN_PRINTFREQ
+thermo_style custom v_btime temp epair vol c_gyr v_ehl
+dump 1 mobil custom RUN_PRINTFREQ RUN_OUTFILE id type x y z ix iy iz
+restart RESTART_FREQ RESTART_FILE
+
+##################################################
+
+# Equilibrate with bead-bead interactions
+
+variable btime equal ((step-RUN1_TIME)*DELTA_T)
+
+reset_timestep 0
+
+run RUN1_TIME
+
+write_data RUN1_SIMFILE nocoeff
+
+##################################################
+
+# Pairwise interactions (Switch on same-type interactions)
+
+pair_style hybrid lj/cut 1.12246152962189 soft 1.12246152962189
+pair_modify shift yes
+pair_coeff * * lj/cut 1.0 1.0 1.12246152962189
+pair_coeff 1 1 soft 0.0 1.12246152962189
+pair_coeff 1 2 soft 0.0 1.12246152962189
+
+variable ehl equal EHETLAM
+
+# Set the types of interactions HL and HH
+
+# Both LAD and HET beads attract with laminar
+if "EHETHET > 0.0" then &
+   "pair_coeff 2 2 lj/cut EHETHET SIGMA CUTOFF"
+if "EHETLAM > 0.0" then &
+   "pair_coeff 2 3 lj/cut EHETLAM SIGMA CUTOFF"
+
+# No interaections for lamin beads
+pair_coeff 3 3 lj/cut 0.0 0.0 0.0 
+
+##################################################
+
+# Start varying HL energy
+
+variable ehl equal ramp(ESTART,EEND)
+
+pair_coeff 2 3 lj/cut ESTART SIGMA CUTOFF
+
+fix varyehl all adapt 1 pair lj/cut epsilon 2 3 v_ehl
+
+run HALF_TIME
+
+unfix varyehl
+
+variable ehl equal ramp(EEND,ESTART)
+
+pair_coeff 2 3 lj/cut EEND SIGMA CUTOFF
+
+fix varyehl all adapt 1 pair lj/cut epsilon 2 3 v_ehl
+
+run HALF_TIME
+
+write_data RUN2_SIMFILE nocoeff
+
+##################################################

@@ -8,8 +8,8 @@ ehl_end=$5
 ehl_inc=$6
 dir=$7
 
-ehh=$(python -c "print '%.1f' % ($ehh_start)")
-ehl=$(python -c "print '%.1f' % ($ehl_start)")
+ehh=$(python -c "print '%.2f' % ($ehh_start)")
+ehl=$(python -c "print '%.2f' % ($ehl_start)")
 
 source 'runconfig.cfg'
 norm_exe="${bin}/contact/exe/VanillaNorm"
@@ -19,15 +19,14 @@ localdistal_exe="${bin}/contact/exe/LocalDistalScore"
 
 # Selection arguments
 N=1261
-L=40
+L=35
 chr=20
-rc=5
 ld=40
 matrix_mode="full"
 
 while (( $(bc <<< "$ehh < $ehh_end") ))
 do
-    ehl=$(python -c "print '%.1f' % ($ehl_start)")
+    ehl=$(python -c "print '%.2f' % ($ehl_start)")
     while (( $(bc <<< "$ehl < $ehl_end") ))
     do
 	echo "Processing contact for ehh = ${ehh} ehl = ${ehl}:"
@@ -38,6 +37,11 @@ do
 	eigen_file="${dir}/eigen_${name}_avg_nocent.dat"
 	corr_file="${dir}/corr_${name}_avg_nocent.dat"
 	localdistal_file="${dir}/local-distal_${name}_avg_nocent.dat"
+#	nocent_file="${dir}/contact_${name}_avg.dat"
+#	norm_file="${dir}/contact_${name}_avg.dat"
+#	eigen_file="${dir}/eigen_${name}_avg.dat"
+#	corr_file="${dir}/corr_${name}_avg.dat"
+#	localdistal_file="${dir}/local-distal_${name}_avg.dat"
 	
 	echo "Remove centromeric region ..."
 	# This assumes the bead index starts from 0 (not 1)
@@ -45,19 +49,19 @@ do
 	awk '{if (($1>=527&&$1<=587)||($2>=527&&$2<=587)) {$3=0.0; print} else {print} }' $contact_file > $nocent_file
 	
 #	echo "Normalising ..."
-	$norm_exe $N $matrix_mode $nocent_file $norm_file
+#	$norm_exe $N $matrix_mode $nocent_file $norm_file
 
-	echo "Calculating correlation ..."
-	$corr_exe $N $matrix_mode $norm_file $corr_file
+#	echo "Calculating correlation ..."
+#	$corr_exe $N $matrix_mode $norm_file $corr_file
 	
-	echo "Doing principal component analysis ..."
-	$eigen_exe $N $matrix_mode $norm_file $eigen_file
+#	echo "Doing principal component analysis ..."
+#	$eigen_exe $N $matrix_mode $norm_file $eigen_file
 
 	echo "Calculating local/distal scores ..."
 	$localdistal_exe $N $ld $matrix_mode $norm_file $localdistal_file
 	
-	ehl=$(python -c "print '%.1f' % ($ehl + $ehl_inc)")
+	ehl=$(python -c "print '%.2f' % ($ehl + $ehl_inc)")
     done
-    ehh=$(python -c "print '%.1f' % ($ehh + $ehh_inc)")
+    ehh=$(python -c "print '%.2f' % ($ehh + $ehh_inc)")
 done
 

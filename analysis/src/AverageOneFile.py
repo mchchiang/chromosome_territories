@@ -3,7 +3,7 @@ import math
 
 args = sys.argv
 
-if (len(args) != 5):
+if (len(args) != 7):
     print "Usage: Average [avg_col] [err_col] [start_row] [end_row] " \
         "[input_file] [output_file]"
     sys.exit(1)
@@ -38,6 +38,10 @@ with open(input_file, 'r') as f:
             continue
         
         value = float(data[avg_col])
+
+        if (math.isnan(value) or math.isinf(value)):
+            continue
+
         avg += value
         avgSq += value*value
         

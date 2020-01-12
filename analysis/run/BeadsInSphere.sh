@@ -9,16 +9,21 @@ ehl_inc=$6
 run_start=$7
 run_end=$8
 run_inc=$9
-in_dir=${10}
-out_dir=${11}
+rc=${10}
+in_dir=${11}
+out_dir=${12}
+
+zero=0.0
+near_zero=0.01
+diff_zero=0.00001
 
 N=6303
-Nhet=3079
-Neu=2923
-Ncent=301
+Nhet=3513 # 3565 # 3079
+Neu=2790 # 2738 # 2923
+Ncent=0 # 301
 bead_type="all"
 
-L=40
+L=35
 chr=20
 rc=5
 ld=200
@@ -26,8 +31,8 @@ t_start=150000
 t_end=200000
 t_inc=1000
 
-ehh=$(python -c "print '%.1f' % ($ehh_start)")
-ehl=$(python -c "print '%.1f' % ($ehl_start)")
+ehh=$(python -c "print '%.2f' % ($ehh_start)")
+ehl=$(python -c "print '%.2f' % ($ehl_start)")
 
 source 'runconfig.cfg'
 bis_exe="${bin}/contact/exe/BeadsInSphere"
@@ -38,9 +43,11 @@ jobid=0
 
 while (( $(bc <<< "$ehh < $ehh_end") ))
 do
-    ehl=$(python -c "print '%.1f' % ($ehl_start)")
+    ehh=$(python -c "print '%.2f' % ($near_zero if abs($ehh)<$diff_zero else $ehh)")
+    ehl=$(python -c "print '%.2f' % ($ehl_start)")
     while (( $(bc <<< "$ehl < $ehl_end") ))
     do
+	ehl=$(python -c "print '%.2f' % ($near_zero if abs($ehl)<$diff_zero else $ehl)")
 	name="sene_chr_${chr}_L_${L}_HH_${ehh}_HL_${ehl}"
 	for (( run=$run_start; $run<=$run_end; run+=$run_inc ))
 	do
@@ -51,9 +58,11 @@ do
 		jobid=$(bc <<< "$jobid + 1")
 	    fi
 	done
-	ehl=$(python -c "print '%.1f' % ($ehl + $ehl_inc)")
+	ehl=$(python -c "print '%.2f' % ($zero if abs($ehl-$near_zero)<$diff_zero else $ehl)")	
+	ehl=$(python -c "print '%.2f' % ($ehl + $ehl_inc)")
     done
-    ehh=$(python -c "print '%.1f' % ($ehh + $ehh_inc)")
+    ehh=$(python -c "print '%.2f' % ($zero if abs($ehh-$near_zero)<$diff_zero else $ehh)")
+    ehh=$(python -c "print '%.2f' % ($ehh + $ehh_inc)")
 done
 
 # Parallel runs

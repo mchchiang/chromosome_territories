@@ -220,7 +220,7 @@ int main(int argc, char* argv[]){
   // Don't need the heterochromatin data anymore
   delete position; 
   delete list;
-
+  
   // Write the distribution to file
   ofstream writer;
   writer.open(outFile);

@@ -12,24 +12,24 @@ run_inc=$9
 in_dir=${10}
 out_dir=${11}
 
-ehh=$(python -c "print '%.1f' % ($ehh_start)")
-ehl=$(python -c "print '%.1f' % ($ehl_start)")
+ehh=$(python -c "print '%.2f' % ($ehh_start)")
+ehl=$(python -c "print '%.2f' % ($ehl_start)")
 
 source 'runconfig.cfg'
 frac_exe="${bin}/contact/exe/ContactFraction"
 
 # Selection arguments
-wall_dist=3.0
+wall_dist=2.0
 bead_type="all"
 t_start=0
-t_end=2200000
-t_inc=1000
+t_end=31000
+t_inc=10
 
 N=6303
-Nhet=3565 # 3079
-Neu=2738 # 2923
+Nhet=3513 # 3565 # 3079
+Neu=2790 # 2738 # 2923
 Ncent=0 # 301
-L=40
+L=35
 chr=20
 
 max_jobs=10
@@ -38,7 +38,7 @@ jobid=0
 
 while (( $(bc <<< "$ehh < $ehh_end") ))
 do
-    ehl=$(python -c "print '%.1f' % ($ehl_start)")
+    ehl=$(python -c "print '%.2f' % ($ehl_start)")
     while (( $(bc <<< "$ehl < $ehl_end") ))
     do
 	for (( run=$run_start; $run<=$run_end; run+=$run_inc ))
@@ -50,9 +50,9 @@ do
 	    jobid=$(bc <<< "$jobid + 1")
 
 	done
-	ehl=$(python -c "print '%.1f' % ($ehl + $ehl_inc)")
+	ehl=$(python -c "print '%.2f' % ($ehl + $ehl_inc)")
     done
-    ehh=$(python -c "print '%.1f' % ($ehh + $ehh_inc)")
+    ehh=$(python -c "print '%.2f' % ($ehh + $ehh_inc)")
 done
 
 
